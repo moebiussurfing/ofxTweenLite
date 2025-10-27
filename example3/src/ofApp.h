@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ofMain.h"
+
 #include "ofxTweenLiteHelper.h"
 
 class ofApp : public ofBaseApp {
@@ -25,4 +26,7 @@ public:
 	static const std::vector<std::string>& getEaseNames() {
 		return ofxTweenLiteHelper<float>::getAllEaseNames();
 	}
+	
+	glm::vec2 posStart;
+	glm::vec2 posEnd;
 };
