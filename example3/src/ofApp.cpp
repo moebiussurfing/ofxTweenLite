@@ -4,32 +4,32 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
 	ofBackground(30);
-
+	
 	// Configure start / end positions based on current window size
 	posStart = glm::vec2(100, ofGetHeight() / 2.0f);
 	posEnd = glm::vec2(ofGetWidth() - 100, ofGetHeight() / 2.0f - 100);
-
+	
 	// Radius tween: from small to large
 	tweenRadius.setFrom(20.0f)
-			   .setTo(80.0f)
-			   .setDuration(2.0f)
-			   .setEase(getEaseModes()[easeIndex])
-			   .setChainFromCurrentValue(false);
-
+		.setTo(80.0f)
+		.setDuration(2.0f)
+		.setEase(getEaseModes()[easeIndex])
+		.setChainFromCurrentValue(false);
+	
 	// Position tween: from left to right
 	tweenPosition.setFrom(posStart)
-				 .setTo(posEnd)
-				 .setDuration(2.0f)
-				 .setEase(getEaseModes()[easeIndex])
-				 .setChainFromCurrentValue(false);
-
+		.setTo(posEnd)
+		.setDuration(2.0f)
+		.setEase(getEaseModes()[easeIndex])
+		.setChainFromCurrentValue(false);
+	
 	// Color tween: from red to blue
 	tweenColor.setFrom(ofColor(255,100,100))
-			  .setTo(ofColor(100,150,255))
-			  .setDuration(2.0f)
-			  .setEase(getEaseModes()[easeIndex])
-			  .setChainFromCurrentValue(false);
-
+		.setTo(ofColor(100,150,255))
+		.setDuration(2.0f)
+		.setEase(getEaseModes()[easeIndex])
+		.setChainFromCurrentValue(false);
+	
 	// Start all tweens
 	tweenRadius.start();
 	tweenPosition.start();
@@ -47,12 +47,12 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
 	ofBackground(30);
-
+	
 	// Get values
 	float radius = tweenRadius.getValue();
 	glm::vec2 pos = tweenPosition.getValue();
 	ofColor col = tweenColor.getValue();
-
+	
 	ofSetColor(col);
 	ofFill();
 	ofDrawCircle(pos.x, pos.y, radius);
@@ -62,23 +62,25 @@ void ofApp::draw(){
 	ofDrawCircle(posStart, 4);
 	ofDrawCircle(posEnd, 4);
 	ofDrawLine(posStart, posEnd);
-
+	
 	// UI text
 	ofSetColor(255);
-	ofDrawBitmapString("Press 'c' to toggle chain mode (applies to all tweens)", 20, 20);
-	ofDrawBitmapString("Press SPACE to restart tweens", 20, 40);
-	ofDrawBitmapString("Up/Down: change ease mode", 20, 60);
-	ofDrawBitmapString("Current Ease: " + getEaseNames()[easeIndex], 20, 80);
-	ofDrawBitmapString("Chain mode: " + std::string(tweenRadius.getChainFromCurrentValue() ? "ON" : "OFF"), 20, 100);
+	int h =20;
+	int y =40;
+	ofDrawBitmapString("Press SPACE to restart tweens", 20, y);
+	ofDrawBitmapString("Up/Down: change ease mode", 20, y=y+h);
+	ofDrawBitmapString("Current Ease: " + getEaseNames()[easeIndex], 20, y=y+h);
+	ofDrawBitmapString("Press 'c' to toggle chain mode", 20, y=y+h);
+	ofDrawBitmapString("Chain mode: " + std::string(tweenRadius.getChainFromCurrentValue() ? "ON" : "OFF"), 20, y=y+h);
 	
 	// Draw progress bar
-	float h= 20;
-	float y=ofGetHeight()-h;
-	ofSetColor(255, 100);
+	float hh= 20;
+	float yy=ofGetHeight()-h;
+	ofSetColor(255, tweenRadius.isRunning()?220: 40);
 	ofFill();
-	ofDrawRectangle(0, y ,tweenPosition.getProgress()*ofGetWidth(), y);
+	ofDrawRectangle(0, yy ,tweenPosition.getProgress()*ofGetWidth(), yy);
 	ofNoFill();
-	ofDrawRectangle(0, y ,ofGetWidth(), y);
+	ofDrawRectangle(0, yy ,ofGetWidth(), yy);
 }
 
 //--------------------------------------------------------------

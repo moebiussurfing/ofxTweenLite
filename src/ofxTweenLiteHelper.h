@@ -98,19 +98,8 @@ namespace ofxTweenLiteHelperUtils {
 		
 		// Starts the tween for a value
 		void start(const T & from_, const T & to_, float duration_, ofEaseFunction easeMode_ = OF_EASE_LINEAR_IN, std::function<void()> onComplete_ = nullptr) {
-			// Explicit start: use the provided from_ as the new initialFrom as well
-			from = from_;
-			initialFrom = from_;
-			to = to_;
-			duration = duration_;
-			easeMode = easeMode_;
-			startTime = ofGetElapsedTimef();
-			finished = false;
-			paused = false;
-			currentRepeat = 0;
-			onComplete = onComplete_;
-			value = from;
-			if (onStart) onStart();
+			// When called explicitly by user, update initialFrom as well
+			startInternal(from_, to_, duration_, easeMode_, onComplete_, true);
 		}
 		
 		// Starts the tween using previously set parameters
@@ -119,13 +108,13 @@ namespace ofxTweenLiteHelperUtils {
 			// otherwise start from the original initialFrom.
 			if (isRunning()) {
 				if (chainFromCurrentValue) {
-					start(value, to, duration, easeMode, onComplete);
+					startInternal(value, to, duration, easeMode, onComplete, false);
 				} else {
-					start(initialFrom, to, duration, easeMode, onComplete);
+					startInternal(initialFrom, to, duration, easeMode, onComplete, false);
 				}
 			} else {
 				// If tween is stopped (not running), always start from the original initialFrom regardless of chain flag
-				start(initialFrom, to, duration, easeMode, onComplete);
+				startInternal(initialFrom, to, duration, easeMode, onComplete, false);
 			}
 		}
 		
@@ -152,8 +141,12 @@ namespace ofxTweenLiteHelperUtils {
 		
 		// Updates the tween and calculates the value
 		void update() {
-			if (finished || paused) {
-				value = to;
+			if (paused) {
+				// When paused, don't update but keep current value
+				return;
+			}
+			if (finished) {
+				// When finished, keep the final calculated value, don't force it to 'to'
 				return;
 			}
 			float elapsed = ofGetElapsedTimef() - startTime;
@@ -161,13 +154,16 @@ namespace ofxTweenLiteHelperUtils {
 			value = ofxTweenLiteHelperUtils::lerp(from, to, ofxTweenLite::tween(0.0f, 1.0f, progress, easeMode));
 			if (onUpdate) onUpdate();
 			if (progress >= 1.0f && !finished) {
+				// Set value to exact 'to' when completing
+				value = to;
 				currentRepeat++;
 				if (repeatCount > 0 && currentRepeat < repeatCount) {
 					// Loop: when looping we consider the chainFromCurrentValue flag as well
+					// Use startInternal with updateInitialFrom=false to preserve original start value
 					if (chainFromCurrentValue) {
-						start(value, to, duration, easeMode, onComplete);
+						startInternal(value, to, duration, easeMode, onComplete, false);
 					} else {
-						start(initialFrom, to, duration, easeMode, onComplete);
+						startInternal(initialFrom, to, duration, easeMode, onComplete, false);
 					}
 				} else {
 					finished = true;
@@ -255,4 +251,22 @@ namespace ofxTweenLiteHelperUtils {
 		std::function<void()> onUpdate;
 		std::function<void()> onComplete;
 		std::function<void()> onCancel;
+		
+		// Internal start method that optionally updates initialFrom
+		void startInternal(const T & from_, const T & to_, float duration_, ofEaseFunction easeMode_, std::function<void()> onComplete_, bool updateInitialFrom) {
+			from = from_;
+			if (updateInitialFrom) {
+				initialFrom = from_;
+			}
+			to = to_;
+			duration = duration_;
+			easeMode = easeMode_;
+			startTime = ofGetElapsedTimef();
+			finished = false;
+			paused = false;
+			currentRepeat = 0;
+			onComplete = onComplete_;
+			value = from;
+			if (onStart) onStart();
+		}
 	};
