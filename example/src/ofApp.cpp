@@ -60,6 +60,7 @@ void ofApp::keyPressed(int key){
 //--------------------------------------------------------------
 std::string ofApp::getEaseModeName(int mode){
     switch(mode){
+        //TODO: use class method to get names
         case OF_EASE_BACK_IN: return "Back In";
         case OF_EASE_BACK_OUT: return "Back Out";
         case OF_EASE_BACK_INOUT: return "Back InOut";
