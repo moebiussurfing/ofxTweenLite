@@ -21,7 +21,8 @@ void ofApp::setup(){
 void ofApp::update(){
 	tweenRadius.update();
 	if(tweenRadius.isRunning()){
-		inPoint.set(tweenRadius.getValue());
+		inPoint.set(tweenRadius.getProgress());
+//		inPoint.set(tweenRadius.getValue());
 	}
 }
 
