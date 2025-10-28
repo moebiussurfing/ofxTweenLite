@@ -18,7 +18,7 @@ void ofApp::setup(){
 	// Setup callback to ensure exact final value
 	tweenRadius.onCompleteCallback([this](){
 		valueTweened.set(1.0f); // Force exact final value when tween completes
-		ofLogNotice("ofApp") << "Tween completed - inPoint set to 1.0f";
+		ofLogNotice("ofApp") << "Tween completed - set to 1.0f";
 	});
 	
 	// Start the tween
@@ -56,6 +56,7 @@ void ofApp::exit(){
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
+	ofLogNotice("ofApp") << "keyPressed() "<<char(key);
 	if(key == ' '){
 		// Restart tween on spacebar
 		tweenRadius.start();
