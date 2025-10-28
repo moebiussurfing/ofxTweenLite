@@ -2,51 +2,63 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
+	ofLogNotice("ofApp") << "setup()";
 	ofSetCircleResolution(100);
 	
-	tweenRadius.setFrom(20.0f)
-		.setTo(radiusMax)
-		.setDuration(2.0f)
-		.setEase(OF_EASE_CUBIC_INOUT)
-		.setChainFromCurrentValue(false);
+	// Setup GUI
+	gui.setup("Tween Example");
+	gui.add(valueTweened.set("Progress", 0.0f, 0.0f, 1.0f));
 	
+	// Setup tween
+	tweenRadius.setFrom(0.0f);
+	tweenRadius.setTo(radiusMax);
+	tweenRadius.setDuration(2.0f);
+	tweenRadius.setEase(OF_EASE_QUAD_OUT);
+	
+	// Setup callback to ensure exact final value
+	tweenRadius.onCompleteCallback([this](){
+		valueTweened.set(1.0f); // Force exact final value when tween completes
+		ofLogNotice("ofApp") << "Tween completed - inPoint set to 1.0f";
+	});
+	
+	// Start the tween
 	tweenRadius.start();
-	
-	gui.setup();
-	gui.add(inPoint.set("In Point", 0.0f, 0.0f, 1.0f));
-	
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
 	tweenRadius.update();
 	if(tweenRadius.isRunning()){
-		inPoint.set(tweenRadius.getProgress());
-//		inPoint.set(tweenRadius.getValue());
+		valueTweened.set(tweenRadius.getProgress());
 	}
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-	float radius = tweenRadius.getValue();
-	glm::vec2 pos = glm::vec2(ofGetWidth() / 2, ofGetHeight() / 2);
-	ofSetColor(255);
-	ofFill();
-	ofDrawCircle(pos.x, pos.y, radius);
-	ofSetColor(255,50);
-	ofNoFill();
-	ofDrawCircle(pos.x, pos.y, radiusMax);
-	ofDrawCircle(pos.x, pos.y, 4);
+	ofBackground(50);
 	
+	// Draw circle with tweened radius
+	ofSetColor(255, 100, 100);
+	ofFill();
+	ofDrawCircle(ofGetWidth()/2, ofGetHeight()/2, tweenRadius.getValue());
+	ofSetColor(255, 100);
+	ofNoFill();
+	ofDrawCircle(ofGetWidth()/2, ofGetHeight()/2, radiusMax);
+	
+	// Draw GUI
 	gui.draw();
 }
 
 //--------------------------------------------------------------
 void ofApp::exit(){
-
+	ofLogNotice("ofApp") << "exit()";
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-	tweenRadius.start();
+	if(key == ' '){
+		// Restart tween on spacebar
+		tweenRadius.start();
+	}
 }
+

@@ -1,5 +1,4 @@
 #pragma once
-
 #include "ofMain.h"
 #include "ofxGui.h"
 #include "ofxTweenLiteHelper.h"
@@ -15,8 +14,8 @@ class ofApp : public ofBaseApp{
 	
 		ofxTweenLiteHelper<float> tweenRadius;
 	
-	float radiusMax=200;
-		
-	ofParameter<float> inPoint;
-	ofxPanel gui;
+		float radiusMax=200;
+			
+		ofParameter<float> valueTweened;
+		ofxPanel gui;
 };

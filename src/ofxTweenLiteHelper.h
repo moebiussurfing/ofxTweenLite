@@ -48,6 +48,7 @@ namespace ofxTweenLiteHelperUtils {
 		, chainFromCurrentValue(false)
 		, repeatCount(0)
 		, currentRepeat(0)
+		, currentProgress(0.0f)
 		, onStart(nullptr)
 		, onUpdate(nullptr)
 		, onComplete(nullptr)
@@ -153,45 +154,10 @@ namespace ofxTweenLiteHelperUtils {
 			float progress = ofClamp(elapsed / duration, 0.0f, 1.0f);
 			value = ofxTweenLiteHelperUtils::lerp(from, to, ofxTweenLite::tween(0.0f, 1.0f, progress, easeMode));
 			
-			// Fix workaround: Force final value when we're very close (within 0.1% of total range)
-			// This ensures we reach the exact target value regardless of framerate/timing precision
-			if (!finished && progress > 0.99f) {
-				T range = to - from;
-				T currentDistance = value - to;
-				
-				// Check if we're within 0.1% (1/1000) of the target value
-				if constexpr (std::is_arithmetic_v<T>) {
-					// For numeric types (float, int, etc.)
-					if (abs(currentDistance) <= abs(range) * 0.001f) {
-						value = to;
-						progress = 1.0f;
-					}
-				} else {
-					// For complex types like glm::vec2, ofColor, etc.
-					// Use a simple distance check relative to the range magnitude
-					float distanceMagnitude = 0.0f;
-					float rangeMagnitude = 0.0f;
-					
-					if constexpr (std::is_same_v<T, glm::vec2>) {
-						distanceMagnitude = glm::length(currentDistance);
-						rangeMagnitude = glm::length(range);
-					} else if constexpr (std::is_same_v<T, ofColor>) {
-						distanceMagnitude = sqrt(pow(currentDistance.r, 2) + pow(currentDistance.g, 2) +
-											   pow(currentDistance.b, 2) + pow(currentDistance.a, 2));
-						rangeMagnitude = sqrt(pow(range.r, 2) + pow(range.g, 2) +
-											pow(range.b, 2) + pow(range.a, 2));
-					}
-					
-					if (rangeMagnitude > 0.0f && distanceMagnitude <= rangeMagnitude * 0.001f) {
-						value = to;
-						progress = 1.0f;
-					}
-				}
-			}
-			
 			if (onUpdate) onUpdate();
 			if (progress >= 1.0f && !finished) {
-				// Set value to exact 'to' when completing
+				// Fix workaround: When tween completes, ensure exact final value
+				// regardless of framerate/timing precision
 				value = to;
 				currentRepeat++;
 				if (repeatCount > 0 && currentRepeat < repeatCount) {
@@ -220,37 +186,10 @@ namespace ofxTweenLiteHelperUtils {
 			float elapsed = ofGetElapsedTimef() - startTime;
 			float progress = ofClamp(elapsed / duration, 0.0f, 1.0f);
 			
-			// Fix workaround: Force progress to 1.0f when very close to completion
-			// This ensures consistent behavior with the update() method fix
-			if (progress > 0.99f) {
-				T range = to - from;
-				T currentDistance = value - to;
-				
-				// Check if we're within 0.1% (1/1000) of the target value
-				if constexpr (std::is_arithmetic_v<T>) {
-					// For numeric types (float, int, etc.)
-					if (abs(currentDistance) <= abs(range) * 0.001f) {
-						return 1.0f;
-					}
-				} else {
-					// For complex types like glm::vec2, ofColor, etc.
-					float distanceMagnitude = 0.0f;
-					float rangeMagnitude = 0.0f;
-					
-					if constexpr (std::is_same_v<T, glm::vec2>) {
-						distanceMagnitude = glm::length(currentDistance);
-						rangeMagnitude = glm::length(range);
-					} else if constexpr (std::is_same_v<T, ofColor>) {
-						distanceMagnitude = sqrt(pow(currentDistance.r, 2) + pow(currentDistance.g, 2) +
-											   pow(currentDistance.b, 2) + pow(currentDistance.a, 2));
-						rangeMagnitude = sqrt(pow(range.r, 2) + pow(range.g, 2) +
-											pow(range.b, 2) + pow(range.a, 2));
-					}
-					
-					if (rangeMagnitude > 0.0f && distanceMagnitude <= rangeMagnitude * 0.001f) {
-						return 1.0f;
-					}
-				}
+			// Fix workaround: When tween completes, ensure exact progress value 1.0f
+			// This matches the same logic used in update() method
+			if (progress >= 1.0f) {
+				return 1.0f;
 			}
 			
 			return progress;
@@ -318,6 +257,7 @@ namespace ofxTweenLiteHelperUtils {
 		bool chainFromCurrentValue;
 		int repeatCount;
 		int currentRepeat;
+		float currentProgress; // Store calculated progress for consistent behavior
 		std::function<void()> onStart;
 		std::function<void()> onUpdate;
 		std::function<void()> onComplete;
@@ -341,3 +281,4 @@ namespace ofxTweenLiteHelperUtils {
 			if (onStart) onStart();
 		}
 	};
+
