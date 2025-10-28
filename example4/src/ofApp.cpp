@@ -2,22 +2,27 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-	ofsetics::setBackgroundColor(100);
+	ofSetCircleResolution(100);
 	
 	tweenRadius.setFrom(20.0f)
-		.setTo(80.0f)
+		.setTo(radiusMax)
 		.setDuration(2.0f)
 		.setEase(OF_EASE_CUBIC_INOUT)
 		.setChainFromCurrentValue(false);
 	
 	tweenRadius.start();
 	
+	gui.setup();
+	gui.add(inPoint.set("In Point", 0.0f, 0.0f, 1.0f));
+	
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
 	tweenRadius.update();
-	
+	if(tweenRadius.isRunning()){
+		inPoint.set(tweenRadius.getValue());
+	}
 }
 
 //--------------------------------------------------------------
@@ -29,9 +34,10 @@ void ofApp::draw(){
 	ofDrawCircle(pos.x, pos.y, radius);
 	ofSetColor(255,50);
 	ofNoFill();
-	ofDrawCircle(pos.x, pos.y, 80);
+	ofDrawCircle(pos.x, pos.y, radiusMax);
 	ofDrawCircle(pos.x, pos.y, 4);
 	
+	gui.draw();
 }
 
 //--------------------------------------------------------------

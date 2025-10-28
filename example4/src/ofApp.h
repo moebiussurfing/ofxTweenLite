@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ofMain.h"
+#include "ofxGui.h"
 #include "ofxTweenLiteHelper.h"
 class ofApp : public ofBaseApp{
 
@@ -11,6 +12,11 @@ class ofApp : public ofBaseApp{
 		void exit() override;
 
 		void keyPressed(int key) override;
-	ofxTweenLiteHelper<float> tweenRadius;
+	
+		ofxTweenLiteHelper<float> tweenRadius;
+	
+	float radiusMax=200;
 		
+	ofParameter<float> inPoint;
+	ofxPanel gui;
 };
