@@ -25,8 +25,8 @@ void ofApp::setupParameters() {
 	tweenRadius.setDuration(2.0f);
 	tweenRadius.setEase(OF_EASE_QUAD_OUT);
 
-	// Add tween parameters to main group - COMMENTED OUT FOR TESTING
-	// params.add(tweenRadius.getParameters());
+	// Add tween parameters to main group
+	params.add(tweenRadius.getParameters());
 
 	// Setup callback to ensure exact final value
 	tweenRadius.onCompleteCallback([this]() {
