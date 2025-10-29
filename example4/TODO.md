@@ -1,5 +1,9 @@
 # TODO
 
+##----
+
+## DONE. CHANGELOG
+
 - no tocar ofxTweenLite, ya que la classe main no es hecha por mi
 - mejorar ofxTweenLiteHelper
 - mejora ejemplo example4 ofapp

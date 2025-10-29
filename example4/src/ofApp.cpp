@@ -16,7 +16,7 @@ void ofApp::setupParameters() {
 
 	// Setup main parameter group
 	params.setName("Example4");
-	params.add(valueTweened.set("Progress", 0.0f, 0.0f, 1.0f));
+	params.add(valueParamTweened.set("Progress", 0.0f, 0.0f, 1.0f));
 
 	// Setup tween with name
 	tweenRadius.setName("Radius");
@@ -30,7 +30,7 @@ void ofApp::setupParameters() {
 
 	// Setup callback to ensure exact final value
 	tweenRadius.onCompleteCallback([this]() {
-		valueTweened.set(1.0f); // Force exact final value when tween completes
+		valueParamTweened.set(1.0f); // Force exact final value when tween completes
 		ofLogNotice("ofApp") << "Tween completed - set to 1.0f";
 	});
 }
@@ -56,7 +56,7 @@ void ofApp::startup() {
 void ofApp::update() {
 	tweenRadius.update();
 	if (tweenRadius.isRunning()) {
-		valueTweened.set(tweenRadius.getProgress());
+		valueParamTweened.set(tweenRadius.getProgress());
 	}
 }
 

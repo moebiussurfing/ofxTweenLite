@@ -21,7 +21,7 @@ private:
 
 	float radiusMax = 200;
 
-	ofParameter<float> valueTweened;
+	ofParameter<float> valueParamTweened;
 	ofParameterGroup params;
 	ofxPanel gui;
 };
