@@ -8,6 +8,7 @@
 #pragma once
 #include "ofMain.h"
 #include "ofxTweenLite.h"
+#include <atomic>
 #include <functional>
 #include <glm/glm.hpp>
 #include <string>
@@ -52,7 +53,49 @@ public:
 		, onStart(nullptr)
 		, onUpdate(nullptr)
 		, onComplete(nullptr)
-		, onCancel(nullptr) { }
+		, onCancel(nullptr)
+		, tweenName_("Tween")
+		, pathSettings_("settings_tween.json") {
+		setupParameters_();
+	}
+
+	/// @brief Set the name of this tween (used for parameter group and JSON filename)
+	void setName(const std::string & name) {
+		tweenName_ = name;
+		params_.setName(name);
+		pathSettings_ = "settings_" + ofToLower(name) + ".json";
+		setupCallbacks_(); // Setup callbacks after parameters are fully initialized
+	}
+
+	/// @brief Get the parameter group for adding to GUI
+	ofParameterGroup & getParameters() {
+		return params_;
+	}
+
+	/// @brief Save settings to JSON file
+	void saveSettings() {
+		ofLogNotice("ofxTweenLiteHelper") << "saveSettings() -> " << pathSettings_;
+		ofJson settings;
+		ofSerialize(settings, params_);
+		bool b = ofSavePrettyJson(pathSettings_, settings);
+		if (b)
+			ofLogNotice("ofxTweenLiteHelper") << "Settings saved: " << pathSettings_;
+		else
+			ofLogError("ofxTweenLiteHelper") << "Unable to save settings: " << pathSettings_;
+	}
+
+	/// @brief Load settings from JSON file
+	void loadSettings() {
+		ofLogNotice("ofxTweenLiteHelper") << "loadSettings() -> " << pathSettings_;
+		ofFile file(pathSettings_);
+		if (file.exists()) {
+			ofJson settings = ofLoadJson(pathSettings_);
+			ofDeserialize(settings, params_);
+			ofLogNotice("ofxTweenLiteHelper") << "Settings loaded: " << pathSettings_;
+		} else {
+			ofLogWarning("ofxTweenLiteHelper") << "Settings file not found: " << pathSettings_;
+		}
+	}
 
 	// Fluent API
 	ofxTweenLiteHelper & setFrom(const T & v) {
@@ -66,18 +109,22 @@ public:
 	}
 	ofxTweenLiteHelper & setDuration(float d) {
 		duration = d;
+		pDuration_ = d; // sync with parameter
 		return *this;
 	}
 	ofxTweenLiteHelper & setEase(ofEaseFunction e) {
 		easeMode = e;
+		pEaseType_ = static_cast<int>(e); // sync with parameter
 		return *this;
 	}
 	ofxTweenLiteHelper & setRepeat(int count) {
 		repeatCount = count;
+		pRepeatCount_ = count; // sync with parameter
 		return *this;
 	}
 	ofxTweenLiteHelper & setChainFromCurrentValue(bool chain) {
 		chainFromCurrentValue = chain;
+		pChainFromCurrent_ = chain; // sync with parameter
 		return *this;
 	}
 	ofxTweenLiteHelper & onStartCallback(std::function<void()> cb) {
@@ -105,6 +152,7 @@ public:
 
 	// Starts the tween using previously set parameters
 	void start() {
+		ofLogNotice("ofxTweenLiteHelper") << "start()";
 		// If tween is currently running, honor chainFromCurrentValue: start from current value if chain enabled,
 		// otherwise start from the original initialFrom.
 		if (isRunning()) {
@@ -121,18 +169,21 @@ public:
 
 	// Cancels the tween
 	void cancel() {
+		ofLogNotice("ofxTweenLiteHelper") << "cancel()";
 		finished = true;
 		if (onCancel) onCancel();
 	}
 
 	// Pauses the tween
 	void pause() {
+		ofLogNotice("ofxTweenLiteHelper") << "pause()";
 		paused = true;
 		pauseTime = ofGetElapsedTimef();
 	}
 
 	// Resumes the tween
 	void resume() {
+		ofLogNotice("ofxTweenLiteHelper") << "resume()";
 		if (paused) {
 			float pausedDuration = ofGetElapsedTimef() - pauseTime;
 			startTime += pausedDuration;
@@ -262,6 +313,93 @@ private:
 	std::function<void()> onUpdate;
 	std::function<void()> onComplete;
 	std::function<void()> onCancel;
+
+	// Parameters and settings
+	std::string tweenName_;
+	std::string pathSettings_;
+	ofParameterGroup params_;
+	ofParameter<float> pDuration_;
+	ofParameter<int> pEaseType_;
+	ofParameter<std::string> pEaseName_;
+	ofParameter<int> pRepeatCount_;
+	ofParameter<bool> pChainFromCurrent_;
+	ofParameter<void> vStart_;
+	ofParameter<void> vStop_;
+	ofParameter<void> vPause_;
+	ofParameter<void> vResume_;
+	ofEventListener e_pDuration_;
+	ofEventListener e_pEaseType_;
+	ofEventListener e_pRepeatCount_;
+	ofEventListener e_pChainFromCurrent_;
+	ofEventListener e_vStart_;
+	ofEventListener e_vStop_;
+	ofEventListener e_vPause_;
+	ofEventListener e_vResume_;
+
+	/// @brief Setup parameters and group
+	void setupParameters_() {
+		params_.setName(tweenName_);
+		params_.add(pDuration_.set("Duration", 1.0f, 0.1f, 10.0f));
+		params_.add(pEaseType_.set("EaseType", OF_EASE_LINEAR_IN, 0, 32));
+		params_.add(pEaseName_.set("EaseName", "LinearIn"));
+		params_.add(pRepeatCount_.set("Repeat", 0, 0, 10));
+		params_.add(pChainFromCurrent_.set("Chain", false));
+		params_.add(vStart_.set("Start"));
+		params_.add(vStop_.set("Stop"));
+		params_.add(vPause_.set("Pause"));
+		params_.add(vResume_.set("Resume"));
+		
+		// Make EaseName non-serializable (read-only display)
+		pEaseName_.setSerializable(false);
+	}
+
+	/// @brief Setup parameter callbacks
+	void setupCallbacks_() {
+		// Duration changed
+		e_pDuration_ = pDuration_.newListener([this](float & v) {
+			if (v <= 0.0f) v = 0.1f; // Validation
+			duration = v;
+		});
+
+		// Ease type changed
+		e_pEaseType_ = pEaseType_.newListener([this](int & v) {
+			v = ofClamp(v, 0, 32); // Validation
+			easeMode = static_cast<ofEaseFunction>(v);
+			// Update ease name
+			const auto & names = getAllEaseNames();
+			if (v >= 0 && v < static_cast<int>(names.size())) {
+				pEaseName_ = names[v];
+			}
+		});
+
+		// Repeat count changed
+		e_pRepeatCount_ = pRepeatCount_.newListener([this](int & v) {
+			if (v < 0) v = 0; // Validation
+			repeatCount = v;
+		});
+
+		// Chain from current changed
+		e_pChainFromCurrent_ = pChainFromCurrent_.newListener([this](bool & v) {
+			chainFromCurrentValue = v;
+		});
+
+		// Button callbacks - ofParameter<void> signature uses const void* sender
+		e_vStart_ = vStart_.newListener([this](const void*) {
+			start();
+		});
+
+		e_vStop_ = vStop_.newListener([this](const void*) {
+			cancel();
+		});
+
+		e_vPause_ = vPause_.newListener([this](const void*) {
+			pause();
+		});
+
+		e_vResume_ = vResume_.newListener([this](const void*) {
+			resume();
+		});
+	}
 
 	// Internal start method that optionally updates initialFrom
 	void startInternal(const T & from_, const T & to_, float duration_, ofEaseFunction easeMode_, std::function<void()> onComplete_, bool updateInitialFrom) {

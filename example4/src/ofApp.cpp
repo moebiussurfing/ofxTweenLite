@@ -5,22 +5,49 @@ void ofApp::setup() {
 	ofLogNotice("ofApp") << "setup()";
 	ofSetCircleResolution(100);
 
-	// Setup GUI
-	gui.setup("Tween Example");
-	gui.add(valueTweened.set("Progress", 0.0f, 0.0f, 1.0f));
+	setupParameters();
+	setupGui();
+	startup();
+}
 
-	// Setup tween
+//--------------------------------------------------------------
+void ofApp::setupParameters() {
+	ofLogNotice("ofApp") << "setupParameters()";
+
+	// Setup main parameter group
+	params.setName("Example4");
+	params.add(valueTweened.set("Progress", 0.0f, 0.0f, 1.0f));
+
+	// Setup tween with name
+	tweenRadius.setName("Radius");
 	tweenRadius.setFrom(0.0f);
 	tweenRadius.setTo(radiusMax);
 	tweenRadius.setDuration(2.0f);
 	tweenRadius.setEase(OF_EASE_QUAD_OUT);
+
+	// Add tween parameters to main group - COMMENTED OUT FOR TESTING
+	// params.add(tweenRadius.getParameters());
 
 	// Setup callback to ensure exact final value
 	tweenRadius.onCompleteCallback([this]() {
 		valueTweened.set(1.0f); // Force exact final value when tween completes
 		ofLogNotice("ofApp") << "Tween completed - set to 1.0f";
 	});
+}
 
+//--------------------------------------------------------------
+void ofApp::setupGui() {
+	ofLogNotice("ofApp") << "setupGui()";
+	gui.setup(params);
+}
+
+//--------------------------------------------------------------
+void ofApp::startup() {
+	ofLogNotice("ofApp") << "startup()";
+	
+	// Load settings
+	tweenRadius.loadSettings();
+	
 	// Start the tween
 	tweenRadius.start();
 }
@@ -63,4 +90,7 @@ void ofApp::keyPressed(int key) {
 //--------------------------------------------------------------
 void ofApp::exit() {
 	ofLogNotice("ofApp") << "exit()";
+	
+	// Save settings
+	tweenRadius.saveSettings();
 }
