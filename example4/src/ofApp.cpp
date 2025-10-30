@@ -16,27 +16,32 @@ void ofApp::setupParameters() {
 
 	// Setup main parameter group
 	params.setName("Example4");
-	params.add(valueParamTweened.set("Tween Progress", 0.0f, 0.0f, 1.0f));
+	params.add(valueParamTweened.set("Tween Progress", 0.0f, 0.0f, radiusMax));
 
 	// Setup tween with name
-	tweenRadius.setName("Radius"); // Will load settings from settings_radius.json
-
-	// Setup JSON settings loaded above can be forced and overwritten here
+	// // Initialize setup settings if desired
 	// tweenRadius.setFrom(0.0f);
 	// tweenRadius.setTo(radiusMax);
-	// tweenRadius.setDuration(2.0f);
-	// tweenRadius.setEase(OF_EASE_QUAD_OUT);
+
+	// Will load settings from settings_radius.json after
+	tweenRadius.setName("Radius");
+
+	// Overwrite loaded JSON settings if desired
+	tweenRadius.setFrom(0.0f);
+	tweenRadius.setTo(radiusMax);
+
+	// Setup JSON settings loaded above can be forced and overwritten here
+	// No manual configuration needed: helper autoloads settings and defaults to 0..1 for floats
 
 	// Add tween parameters to main group (two valid approaches)
 	params.add(tweenRadius.getParameters());
 	// params.add(tweenRadius.params_());
 
-	//TODO: this should be handled correctly inside ofxTweenLiteHelper!
-	// // Setup callback to ensure exact final value
-	// tweenRadius.onCompleteCallback([this]() {
-	// 	valueParamTweened.set(1.0f); // Force exact final value when tween completes
-	// 	ofLogNotice("ofApp") << "Tween completed - set to 1.0f. tweenRadius value: " << tweenRadius.getValue();
-	// });
+	// Setup user callback for custom behavior (e.g., state machine, workflow)
+	tweenRadius.onUserCompleteCallback([this]() {
+		ofLogNotice("ofApp") << "User callback: Tween completed! Value: " << tweenRadius.getValue();
+		// You can add custom behavior here, change states, trigger other tweens, etc.
+	});
 }
 
 //--------------------------------------------------------------
@@ -44,12 +49,8 @@ void ofApp::setupGui() {
 	ofLogNotice("ofApp") << "setupGui()";
 	gui.setup(params);
 
-	// Refresh GUI to minimize collapse ui folder for advanced params
-	//TODO: this should be handled correctly inside ofxTweenLiteHelper!
-	// create void refreshGui(ofxPanel & gui)
-	// so can be called here tweenRadius.refreshGui(gui);
-	auto &g=gui.getGroup(tweenRadius.params.getName());
-	g.getGroup(tweenRadius.paramsAdvanced_.getName()).minimize();
+	// Refresh GUI to minimize Advanced parameters group
+	tweenRadius.refreshGui(gui);
 }
 
 //--------------------------------------------------------------
@@ -64,7 +65,7 @@ void ofApp::startup() {
 void ofApp::update() {
 	tweenRadius.update();
 	if (tweenRadius.isRunning()) {
-		valueParamTweened.set(tweenRadius.getProgress());
+		valueParamTweened.set(tweenRadius.getValue());
 	}
 }
 
@@ -75,7 +76,7 @@ void ofApp::draw() {
 	// Draw circle with tweened radius
 	ofSetColor(255, 100, 100);
 	ofFill();
-	ofDrawCircle(ofGetWidth() / 2, ofGetHeight() / 2, tweenRadius.getValue());
+	ofDrawCircle(ofGetWidth() / 2, ofGetHeight() / 2, valueParamTweened.get());
 
 	// Circle max radius outline
 	ofSetColor(255, 100);

@@ -54,6 +54,7 @@ public:
 		, onUpdate(nullptr)
 		, onComplete(nullptr)
 		, onCancel(nullptr)
+		, defaultConfigured_(false)
 		, tweenName_("Tween")
 		, pathSettings_("settings_tween.json") {
 		setupParameters_();
@@ -61,10 +62,15 @@ public:
 
 	/// @brief Set the name of this tween (used for parameter group and JSON filename)
 	void setName(const std::string & name) {
+		ofLogNotice("ofxTweenLiteHelper") << "setName() "<< name;
 		tweenName_ = name;
 		params_.setName(name);
 		pathSettings_ = "settings_" + ofToLower(name) + ".json";
 		setupCallbacks_(); // Setup callbacks after parameters are fully initialized
+		// Autoload settings so the user doesn't need to call it from ofApp
+		loadSettings();
+		// Ensure sane defaults if range isn't configured (eg: float 0..1)
+		ensureDefaultRangeIfUnset_();
 	}
 
 	/// @brief Get the parameter group for adding to GUI
@@ -76,6 +82,13 @@ public:
 	void exit() {
 		ofLogNotice("ofxTweenLiteHelper") << "exit()";
 		saveSettings();
+	}
+
+	/// @brief Refresh GUI to minimize Advanced parameters group
+	void refreshGui(ofxPanel & gui) {
+		ofLogNotice("ofxTweenLiteHelper") << "refreshGui()";
+		auto & g = gui.getGroup(params_.getName());
+		g.getGroup(paramsAdvanced_.getName()).minimize();
 	}
 
 	/// @brief Save settings to JSON file
@@ -145,6 +158,10 @@ public:
 		onComplete = cb;
 		return *this;
 	}
+	ofxTweenLiteHelper & onUserCompleteCallback(std::function<void()> cb) {
+		onUserComplete = cb;
+		return *this;
+	}
 	ofxTweenLiteHelper & onCancelCallback(std::function<void()> cb) {
 		onCancel = cb;
 		return *this;
@@ -160,6 +177,8 @@ public:
 	// Starts the tween using previously set parameters
 	void start() {
 		ofLogNotice("ofxTweenLiteHelper") << "start()";
+		// Ensure default range for types that support normalized 0..1 when not configured
+		ensureDefaultRangeIfUnset_();
 		// If tween is currently running, honor chainFromCurrentValue: start from current value if chain enabled,
 		// otherwise start from the original initialFrom.
 		if (isRunning()) {
@@ -228,7 +247,10 @@ public:
 				}
 			} else {
 				finished = true;
+				// Internal callback (always runs to ensure exact final value)
 				if (onComplete) onComplete();
+				// User callback (runs after internal callback for state machine/workflow)
+				if (onUserComplete) onUserComplete();
 			}
 		}
 	}
@@ -319,7 +341,9 @@ private:
 	std::function<void()> onStart;
 	std::function<void()> onUpdate;
 	std::function<void()> onComplete;
+	std::function<void()> onUserComplete;
 	std::function<void()> onCancel;
+	bool defaultConfigured_;
 
 	// Parameters and settings
 	std::string tweenName_;
@@ -365,6 +389,28 @@ private:
 		
 		// Make EaseName non-serializable (read-only display)
 		pEaseName_.setSerializable(false);
+	}
+
+	// Ensure a sane default range (0..1) for floating point tweens if user hasn't configured from/to.
+	// For non-floating types, do nothing.
+	template <typename U = T>
+	std::enable_if_t<std::is_floating_point<U>::value, void>
+	ensureDefaultRangeIfUnset_() {
+		if (defaultConfigured_) return;
+		U zero{};
+		if (from == zero && to == zero) {
+			from = static_cast<U>(0);
+			initialFrom = from;
+			to = static_cast<U>(1);
+		}
+		defaultConfigured_ = true;
+	}
+
+	template <typename U = T>
+	std::enable_if_t<!std::is_floating_point<U>::value, void>
+	ensureDefaultRangeIfUnset_() {
+		// Not applicable; mark as configured to avoid repeated checks.
+		defaultConfigured_ = true;
 	}
 
 	/// @brief Setup parameter callbacks
