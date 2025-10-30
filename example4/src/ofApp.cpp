@@ -16,37 +16,45 @@ void ofApp::setupParameters() {
 
 	// Setup main parameter group
 	params.setName("Example4");
-	params.add(valueParamTweened.set("Progress", 0.0f, 0.0f, 1.0f));
+	params.add(valueParamTweened.set("Tween Progress", 0.0f, 0.0f, 1.0f));
 
 	// Setup tween with name
-	tweenRadius.setName("Radius");
-	tweenRadius.setFrom(0.0f);
-	tweenRadius.setTo(radiusMax);
-	tweenRadius.setDuration(2.0f);
-	tweenRadius.setEase(OF_EASE_QUAD_OUT);
+	tweenRadius.setName("Radius"); // Will load settings from settings_radius.json
 
-	// Add tween parameters to main group
+	// Setup JSON settings loaded above can be forced and overwritten here
+	// tweenRadius.setFrom(0.0f);
+	// tweenRadius.setTo(radiusMax);
+	// tweenRadius.setDuration(2.0f);
+	// tweenRadius.setEase(OF_EASE_QUAD_OUT);
+
+	// Add tween parameters to main group (two valid approaches)
 	params.add(tweenRadius.getParameters());
+	// params.add(tweenRadius.params_());
 
-	// Setup callback to ensure exact final value
-	tweenRadius.onCompleteCallback([this]() {
-		valueParamTweened.set(1.0f); // Force exact final value when tween completes
-		ofLogNotice("ofApp") << "Tween completed - set to 1.0f";
-	});
+	//TODO: this should be handled correctly inside ofxTweenLiteHelper!
+	// // Setup callback to ensure exact final value
+	// tweenRadius.onCompleteCallback([this]() {
+	// 	valueParamTweened.set(1.0f); // Force exact final value when tween completes
+	// 	ofLogNotice("ofApp") << "Tween completed - set to 1.0f. tweenRadius value: " << tweenRadius.getValue();
+	// });
 }
 
 //--------------------------------------------------------------
 void ofApp::setupGui() {
 	ofLogNotice("ofApp") << "setupGui()";
 	gui.setup(params);
+
+	// Refresh GUI to minimize collapse ui folder for advanced params
+	//TODO: this should be handled correctly inside ofxTweenLiteHelper!
+	// create void refreshGui(ofxPanel & gui)
+	// so can be called here tweenRadius.refreshGui(gui);
+	auto &g=gui.getGroup(tweenRadius.params.getName());
+	g.getGroup(tweenRadius.paramsAdvanced_.getName()).minimize();
 }
 
 //--------------------------------------------------------------
 void ofApp::startup() {
 	ofLogNotice("ofApp") << "startup()";
-	
-	// Load settings
-	tweenRadius.loadSettings();
 	
 	// Start the tween
 	tweenRadius.start();
@@ -91,6 +99,6 @@ void ofApp::keyPressed(int key) {
 void ofApp::exit() {
 	ofLogNotice("ofApp") << "exit()";
 	
-	// Save settings
-	tweenRadius.saveSettings();
+	// To save settings
+	tweenRadius.exit();
 }

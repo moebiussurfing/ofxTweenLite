@@ -72,6 +72,12 @@ public:
 		return params_;
 	}
 
+	/// @brief Exit function to be called on app exit and save settings	
+	void exit() {
+		ofLogNotice("ofxTweenLiteHelper") << "exit()";
+		saveSettings();
+	}
+
 	/// @brief Save settings to JSON file
 	void saveSettings() {
 		ofLogNotice("ofxTweenLiteHelper") << "saveSettings() -> " << pathSettings_;
@@ -146,6 +152,7 @@ public:
 
 	// Starts the tween for a value
 	void start(const T & from_, const T & to_, float duration_, ofEaseFunction easeMode_ = OF_EASE_LINEAR_IN, std::function<void()> onComplete_ = nullptr) {
+		ofLogNotice("ofxTweenLiteHelper") << "start(..)";
 		// When called explicitly by user, update initialFrom as well
 		startInternal(from_, to_, duration_, easeMode_, onComplete_, true);
 	}
@@ -317,7 +324,10 @@ private:
 	// Parameters and settings
 	std::string tweenName_;
 	std::string pathSettings_;
+public:
 	ofParameterGroup params_;
+	ofParameterGroup paramsAdvanced_;
+
 	ofParameter<float> pDuration_;
 	ofParameter<int> pEaseType_;
 	ofParameter<std::string> pEaseName_;
@@ -327,6 +337,7 @@ private:
 	ofParameter<void> vStop_;
 	ofParameter<void> vPause_;
 	ofParameter<void> vResume_;
+private:
 	ofEventListener e_pDuration_;
 	ofEventListener e_pEaseType_;
 	ofEventListener e_pRepeatCount_;
@@ -338,16 +349,19 @@ private:
 
 	/// @brief Setup parameters and group
 	void setupParameters_() {
+		ofLogNotice("ofxTweenLiteHelper") << "setupParameters_()";
 		params_.setName(tweenName_);
 		params_.add(pDuration_.set("Duration", 1.0f, 0.1f, 10.0f));
 		params_.add(pEaseType_.set("EaseType", OF_EASE_LINEAR_IN, 0, 32));
 		params_.add(pEaseName_.set("EaseName", "LinearIn"));
-		params_.add(pRepeatCount_.set("Repeat", 0, 0, 10));
-		params_.add(pChainFromCurrent_.set("Chain", false));
 		params_.add(vStart_.set("Start"));
-		params_.add(vStop_.set("Stop"));
-		params_.add(vPause_.set("Pause"));
-		params_.add(vResume_.set("Resume"));
+		paramsAdvanced_.setName("Advanced");
+		paramsAdvanced_.add(pRepeatCount_.set("Repeat", 0, 0, 10));
+		paramsAdvanced_.add(pChainFromCurrent_.set("Chain", false));
+		paramsAdvanced_.add(vStop_.set("Stop"));
+		paramsAdvanced_.add(vPause_.set("Pause"));
+		paramsAdvanced_.add(vResume_.set("Resume"));
+		params_.add(paramsAdvanced_);
 		
 		// Make EaseName non-serializable (read-only display)
 		pEaseName_.setSerializable(false);
@@ -355,6 +369,8 @@ private:
 
 	/// @brief Setup parameter callbacks
 	void setupCallbacks_() {
+		ofLogNotice("ofxTweenLiteHelper") << "setupCallbacks_()";
+
 		// Duration changed
 		e_pDuration_ = pDuration_.newListener([this](float & v) {
 			if (v <= 0.0f) v = 0.1f; // Validation
@@ -403,6 +419,7 @@ private:
 
 	// Internal start method that optionally updates initialFrom
 	void startInternal(const T & from_, const T & to_, float duration_, ofEaseFunction easeMode_, std::function<void()> onComplete_, bool updateInitialFrom) {
+		ofLogNotice("ofxTweenLiteHelper") << "startInternal()";
 		from = from_;
 		if (updateInitialFrom) {
 			initialFrom = from_;
