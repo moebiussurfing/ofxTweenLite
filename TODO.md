@@ -2,12 +2,9 @@
 
 ## DO NOW:
 
-- quiero recuperar o anadir los params `from` y `to`. (no hacen falta listeners aqui)
-- para `onUserCompleteCallback` quiero un tipo de `fuction` cpp que se pueda pasar como argumento. es mas, quiero que pueda cambiar esta funcion durante el runtime... es posible? asi es como hare mi maquina de estados
-- implementa `resume`, ahora funciona el pause pero no resume
-- el `stop` tampoco esta implementado: debe poner el progress y value a 0 (o start `from` value)
-- implementar el `repeat` counter.
-- repasa que al final del tween no se esta clavando al valor final o valor `to`! cada vez que lo corro cambia el valor final: en este caso 199.98, 200.12 etc. Recuerda: quiero que internamente `ofxTweenLite`, antes de marcar el objeto como isRunning = false, ponga el valor del tween al valor final, ya que los fps hacen que pueda no llegar el valor final el tween value y progress. No quiero que tenga que hacerse en ofApp esta verificacion! en ofApp solo quiero definir el comportamiento de mi aplicacion cuando van terminando diferentes tweens, para gestionar mi states machine.
+- `stop` debe resetear value a `from` y `progress` a 0
+- aplica valor directamente al ofParam
+
 
 ## HOWTO: RULES:
 
@@ -16,6 +13,7 @@
 - no tocar ofxTweenLite, ya que la classe main no es hecha por mi y quiero mantener la dependencia intacta
 - no toques mis lineas conectadas
 - no cambies cosas sin pedirme autorizacion, por favor
+- usa build Debug siempre, nunca Release
 
 ## ----------
 
@@ -27,7 +25,23 @@
 
 # DONE: CHANGELOG:
 
-## October 30, 2025
+## October 30, 2025 - Session 2
+
+✅ **pFrom_ and pTo_ parameters** - Added ofParameter<T> for `from` and `to` values
+  - Exposed in GUI and serialized to JSON
+  - Automatically synced when using setFrom() and setTo() methods
+  - Updated in ensureDefaultRangeIfUnset_() for default 0..1 range
+✅ **stop() method** - Properly implemented to reset tween to initial state
+  - Resets value to initialFrom
+  - Resets currentRepeat counter to 0
+  - Sets finished=true and paused=false
+  - Triggers onCancel callback
+  - cancel() now calls stop() as an alias
+✅ **Final value clamping verification** - Confirmed working correctly
+  - Line 248: `value = to;` ensures exact final value before marking as finished
+  - Workaround for FPS variations already implemented and working
+
+## October 30, 2025 - Session 1
 
 ✅ **Automatic onComplete callback** - Already implemented in update() method to force exact final value
 ✅ **Repeat count** - Already fully implemented with pRepeatCount_ parameter

@@ -3,6 +3,12 @@
 #include "ofMain.h"
 #include "ofxTweenLite.h"
 
+/*
+	This example demonstrates basic usage of ofxTweenLite for tweening.
+	This is the simplest way to use ofxTweenLite without any helper classes.
+	For using ofxTweenLiteHelper methods see the other examples.
+*/
+
 class ofApp : public ofBaseApp{
 
 	public:

@@ -14,32 +14,29 @@ void ofApp::setup() {
 void ofApp::setupParameters() {
 	ofLogNotice("ofApp") << "setupParameters()";
 
+	// Initialize the target ofParameter<float>
+	valueParam.set("ValueParam", 0.0f, 0.0f, radiusMax);
+
+	// Tweener setup with the target ofParameter<float> linked
+	tweener.setupParameter(valueParam);
+	
+	// Force overwrite settings can be done here if needed
+	// tweener.setFrom(0.0f).setTo(radiusMax).setDuration(2.0f).setEase(OF_EASE_QUAD_IN_OUT);
+
+	//--
+
 	// Setup main parameter group
 	params.setName("Example4");
-	params.add(valueParamTweened.set("Tween Progress", 0.0f, 0.0f, radiusMax));
+	params.add(valueParam);
+	
+	// Add tween parameters to main group for GUI
+	params.add(tweener.getParameters());
 
-	// Setup tween with name
-	// // Initialize setup settings if desired
-	// tweenRadius.setFrom(0.0f);
-	// tweenRadius.setTo(radiusMax);
-
-	// Will load settings from settings_radius.json after
-	tweenRadius.setName("Radius");
-
-	// Overwrite loaded JSON settings if desired
-	tweenRadius.setFrom(0.0f);
-	tweenRadius.setTo(radiusMax);
-
-	// Setup JSON settings loaded above can be forced and overwritten here
-	// No manual configuration needed: helper autoloads settings and defaults to 0..1 for floats
-
-	// Add tween parameters to main group (two valid approaches)
-	params.add(tweenRadius.getParameters());
-	// params.add(tweenRadius.params_());
+	//--
 
 	// Setup user callback for custom behavior (e.g., state machine, workflow)
-	tweenRadius.onUserCompleteCallback([this]() {
-		ofLogNotice("ofApp") << "User callback: Tween completed! Value: " << tweenRadius.getValue();
+	tweener.onUserCompleteCallback([this]() {
+		ofLogNotice("ofApp") << "User callback: Tween completed! Value: " << tweener.getValue();
 		// You can add custom behavior here, change states, trigger other tweens, etc.
 	});
 }
@@ -50,7 +47,7 @@ void ofApp::setupGui() {
 	gui.setup(params);
 
 	// Refresh GUI to minimize Advanced parameters group
-	tweenRadius.refreshGui(gui);
+	tweener.refreshGui(gui);
 }
 
 //--------------------------------------------------------------
@@ -58,15 +55,12 @@ void ofApp::startup() {
 	ofLogNotice("ofApp") << "startup()";
 	
 	// Start the tween
-	tweenRadius.start();
+	tweener.start();
 }
 
 //--------------------------------------------------------------
 void ofApp::update() {
-	tweenRadius.update();
-	if (tweenRadius.isRunning()) {
-		valueParamTweened.set(tweenRadius.getValue());
-	}
+	tweener.update();
 }
 
 //--------------------------------------------------------------
@@ -76,7 +70,7 @@ void ofApp::draw() {
 	// Draw circle with tweened radius
 	ofSetColor(255, 100, 100);
 	ofFill();
-	ofDrawCircle(ofGetWidth() / 2, ofGetHeight() / 2, valueParamTweened.get());
+	ofDrawCircle(ofGetWidth() / 2, ofGetHeight() / 2, valueParam.get());
 
 	// Circle max radius outline
 	ofSetColor(255, 100);
@@ -92,7 +86,7 @@ void ofApp::keyPressed(int key) {
 	ofLogNotice("ofApp") << "keyPressed() " << char(key);
 	if (key == ' ') {
 		// Restart tween on spacebar
-		tweenRadius.start();
+		tweener.start();
 	}
 }
 
@@ -101,5 +95,5 @@ void ofApp::exit() {
 	ofLogNotice("ofApp") << "exit()";
 	
 	// To save settings
-	tweenRadius.exit();
+	tweener.exit();
 }
