@@ -16,6 +16,7 @@ void ofApp::setupParameters() {
 
 	valueParam.set("ValueParam", 0.0f, 0.0f, radiusMax);
 	
+	// Tweener setup with linked parameter
 	tweener.setupParameter(valueParam);
 	
 	// Force overwrite settings can be done here if needed
@@ -27,7 +28,7 @@ void ofApp::setupParameters() {
 	params.setName("Example4");
 	params.add(valueParam);
 	
-	// Add tween parameters to main group
+	// Add tween parameters to main group for GUI
 	params.add(tweener.getParameters());
 
 	//--
