@@ -17,7 +17,7 @@ private:
 	void setupGui();
 	void startup();
 
-	ofxTweenLiteHelper<float> tweener; // Init here the tween helper float type
+	ofxTweenLiteHelper<float> tweener; // Init here the tween helper as float type
 
 	float radiusMax = 200;
 

@@ -27,9 +27,8 @@ void ofApp::setupParameters() {
 	params.setName("Example4");
 	params.add(valueParam);
 	
-	// Add tween parameters to main group (two valid approaches)
+	// Add tween parameters to main group
 	params.add(tweener.getParameters());
-	// params.add(tweener.params_);
 
 	//--
 
@@ -60,9 +59,6 @@ void ofApp::startup() {
 //--------------------------------------------------------------
 void ofApp::update() {
 	tweener.update();
-	if (tweener.isRunning()) {
-		valueParam.set(tweener.getValue());
-	}
 }
 
 //--------------------------------------------------------------

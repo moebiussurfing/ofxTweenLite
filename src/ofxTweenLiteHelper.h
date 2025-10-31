@@ -18,11 +18,19 @@
 // Helper for interpolation
 // Implemented types: float, glm::vec2, ofColor
 namespace ofxTweenLiteHelperUtils {
+// Generic template (float)
 template <typename T>
 inline T lerp(const T & a, const T & b, float t) { return a + (b - a) * t; }
+// int
+template <>
+inline int lerp(const int & a, const int & b, float t) { 
+    return static_cast<int>(std::round(a + (b - a) * t)); 
+}
+// vec2
 template <>
 inline glm::vec2 lerp(const glm::vec2 & a, const glm::vec2 & b, float t) { return a + (b - a) * t; }
 template <>
+// ofColor
 inline ofColor lerp(const ofColor & a, const ofColor & b, float t) {
 	return ofColor(
 		ofLerp(a.r, b.r, t),
@@ -229,18 +237,25 @@ public:
 		float progress = ofClamp(elapsed / duration, 0.0f, 1.0f);
 		value = ofxTweenLiteHelperUtils::lerp(from, to, ofxTweenLite::tween(0.0f, 1.0f, progress, easeMode));
 
+		// Auto-update linked parameter if available
+		if (ap_ != nullptr) {
+			auto typedParam = dynamic_cast<ofParameter<T>*>(ap_);
+			if (typedParam) {
+				typedParam->set(value);
+			}
+		}
+
 		if (onUpdate) onUpdate();
 		if (progress >= 1.0f && !finished) {
 			// Fix workaround: When tween completes, ensure exact final value
 			// regardless of framerate/timing precision
 			value = to;
-			{
-				finished = true;
-				// Internal callback (always runs to ensure exact final value)
-				if (onComplete) onComplete();
-				// User callback (runs after internal callback for state machine/workflow)
-				if (onUserComplete) onUserComplete();
-			}
+			
+			finished = true;
+			// Internal callback (always runs to ensure exact final value)
+			if (onComplete) onComplete();
+			// User callback (runs after internal callback for state machine/workflow)
+			if (onUserComplete) onUserComplete();
 		}
 	}
 
@@ -373,7 +388,18 @@ private:
             
             bool bValidType = false;
 
-            // Print type info
+            // Verify supported types and print type info
+
+			// int
+			auto parameterInt = dynamic_cast<ofParameter<int>*>(ap_);
+			if (parameterInt)
+			{
+				ofLogNotice("ofxTweenLiteHelper") << "type int";
+				this->setFrom(parameterInt->getMin());
+				this->setTo(parameterInt->getMax());
+				bValidType = true;
+			}
+			// float
 			auto parameterFloat = dynamic_cast<ofParameter<float>*>(ap_);
             if (parameterFloat)
             {
@@ -382,12 +408,14 @@ private:
 				this->setTo(parameterFloat->getMax());
                 bValidType = true;
             }
+			// vec2
 			auto parameterVec2f = dynamic_cast<ofParameter<glm::vec2>*>(ap_);
             if (parameterVec2f)
             {
                 ofLogNotice("ofxTweenLiteHelper") << "type glm::vec2";
                 bValidType = true;
             }
+			// ofColor
 			auto parameterColor = dynamic_cast<ofParameter<ofColor>*>(ap_);
             if (parameterColor)
             {
@@ -406,9 +434,9 @@ private:
 
 		setupParameters_();
 
-		tweenName_ = name;
-		params_.setName(name);
-		pathSettings_ = "settings_" + name + ".json";
+		tweenName_ = "Tween_" +name;
+		params_.setName(tweenName_);
+		pathSettings_ = "settings_" + tweenName_ + ".json";
 
 		setupCallbacks_(); // Setup callbacks after parameters are fully initialized
 
@@ -432,12 +460,17 @@ private:
 				params_.add(pTo_.set("To", T{}, typedParam->getMin(), typedParam->getMax()));
 			} else {
 				// Fallback if cast fails (type mismatch)
-				params_.add(pFrom_.set("From", T{}));
-				params_.add(pTo_.set("To", T{}));
+            	setupDefaultParams_();
 			}
-		} else {
-			params_.add(pFrom_.set("From", T{}));
-			params_.add(pTo_.set("To", T{}));
+		} else { // No linked ofParameter, use default construction
+				// No linked ofParameter, use type-appropriate defaults
+        		setupDefaultParams_();
+
+			// // Assume From is less than To initially: both same values
+			// pFrom_.setMin(pFrom_.get());
+			// pFrom_.setMax(pTo_.get());
+			// pTo_.setMin(pFrom_.get());
+			// pTo_.setMax(pTo_.get());
 		}
 		
 		params_.add(pDuration_.set("Duration", 1.0f, 0.1f, 10.0f));
@@ -450,40 +483,44 @@ private:
 		paramsAdvanced_.add(vPause_.set("Pause"));
 		paramsAdvanced_.add(vResume_.set("Resume"));
 		params_.add(paramsAdvanced_);
-
-		// // Assume From is less than To initially: both same values
-		// pFrom_.setMin(pFrom_.get());
-		// pFrom_.setMax(pTo_.get());
-		// pTo_.setMin(pFrom_.get());
-		// pTo_.setMax(pTo_.get());
 		
 		// Make EaseName non-serializable (read-only display)
 		pEaseName_.setSerializable(false);
 	}
 
-	// // Ensure a sane default range (0..1) for floating point tweens if user hasn't configured from/to.
-	// // For non-floating types, do nothing.
-	// template <typename U = T>
-	// std::enable_if_t<std::is_floating_point<U>::value, void>
-	// ensureDefaultRangeIfUnset_() {
-	// 	if (defaultConfigured_) return;
-	// 	U zero{};
-	// 	if (from == zero && to == zero) {
-	// 		from = static_cast<U>(0);
-	// 		initialFrom = from;
-	// 		to = static_cast<U>(1);
-	// 		pFrom_ = from; // sync with parameter
-	// 		pTo_ = to; // sync with parameter
-	// 	}
-	// 	defaultConfigured_ = true;
-	// }
+private:
+	/// @brief Setup default parameters based on type T
+	template <typename U = T>
+	typename std::enable_if<std::is_same<U, int>::value>::type
+	setupDefaultParams_() {
+		// int: 0 to 100
+		params_.add(pFrom_.set("From", 0, 0, 100));
+		params_.add(pTo_.set("To", 100, 0, 100));
+	}
 
-	// template <typename U = T>
-	// std::enable_if_t<!std::is_floating_point<U>::value, void>
-	// ensureDefaultRangeIfUnset_() {
-	// 	// Not applicable; mark as configured to avoid repeated checks.
-	// 	defaultConfigured_ = true;
-	// }
+	template <typename U = T>
+	typename std::enable_if<std::is_same<U, float>::value>::type
+	setupDefaultParams_() {
+		// float: 0.0 to 1.0
+		params_.add(pFrom_.set("From", 0.0f, 0.0f, 1.0f));
+		params_.add(pTo_.set("To", 1.0f, 0.0f, 1.0f));
+	}
+
+	template <typename U = T>
+	typename std::enable_if<std::is_same<U, glm::vec2>::value>::type
+	setupDefaultParams_() {
+		// vec2: (0,0) to (1,1)
+		params_.add(pFrom_.set("From", glm::vec2(0, 0), glm::vec2(0, 0), glm::vec2(1, 1)));
+		params_.add(pTo_.set("To", glm::vec2(1, 1), glm::vec2(0, 0), glm::vec2(1, 1)));
+	}
+
+	template <typename U = T>
+	typename std::enable_if<std::is_same<U, ofColor>::value>::type
+	setupDefaultParams_() {
+		// ofColor: black to white
+		params_.add(pFrom_.set("From", ofColor(0), ofColor(0), ofColor(255)));
+		params_.add(pTo_.set("To", ofColor(255), ofColor(0), ofColor(255)));
+	}
 
 	/// @brief Setup parameter callbacks
 	void setupCallbacks_() {
