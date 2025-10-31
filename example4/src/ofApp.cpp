@@ -14,23 +14,28 @@ void ofApp::setup() {
 void ofApp::setupParameters() {
 	ofLogNotice("ofApp") << "setupParameters()";
 
-	valueParamTweened.set("TweenValueParam", 0.0f, 0.0f, radiusMax);
-
-	// Setup main parameter group
-	params.setName("Example4");
-	params.add(valueParamTweened);
-
-	tweenRadius.setupParameter(valueParamTweened);
+	valueParam.set("ValueParam", 0.0f, 0.0f, radiusMax);
+	
+	tweener.setupParameter(valueParam);
+	
+	// Force overwrite settings can be done here if needed
+	// tweener.setFrom(0.0f).setTo(radiusMax).setDuration(2.0f).setEase(OF_EASE_QUAD_IN_OUT);
 
 	//--
 
+	// Setup main parameter group
+	params.setName("Example4");
+	params.add(valueParam);
+	
 	// Add tween parameters to main group (two valid approaches)
-	params.add(tweenRadius.getParameters());
-	// params.add(tweenRadius.params_);
+	params.add(tweener.getParameters());
+	// params.add(tweener.params_);
+
+	//--
 
 	// Setup user callback for custom behavior (e.g., state machine, workflow)
-	tweenRadius.onUserCompleteCallback([this]() {
-		ofLogNotice("ofApp") << "User callback: Tween completed! Value: " << tweenRadius.getValue();
+	tweener.onUserCompleteCallback([this]() {
+		ofLogNotice("ofApp") << "User callback: Tween completed! Value: " << tweener.getValue();
 		// You can add custom behavior here, change states, trigger other tweens, etc.
 	});
 }
@@ -41,7 +46,7 @@ void ofApp::setupGui() {
 	gui.setup(params);
 
 	// Refresh GUI to minimize Advanced parameters group
-	tweenRadius.refreshGui(gui);
+	tweener.refreshGui(gui);
 }
 
 //--------------------------------------------------------------
@@ -49,14 +54,14 @@ void ofApp::startup() {
 	ofLogNotice("ofApp") << "startup()";
 	
 	// Start the tween
-	tweenRadius.start();
+	tweener.start();
 }
 
 //--------------------------------------------------------------
 void ofApp::update() {
-	tweenRadius.update();
-	if (tweenRadius.isRunning()) {
-		valueParamTweened.set(tweenRadius.getValue());
+	tweener.update();
+	if (tweener.isRunning()) {
+		valueParam.set(tweener.getValue());
 	}
 }
 
@@ -67,7 +72,7 @@ void ofApp::draw() {
 	// Draw circle with tweened radius
 	ofSetColor(255, 100, 100);
 	ofFill();
-	ofDrawCircle(ofGetWidth() / 2, ofGetHeight() / 2, valueParamTweened.get());
+	ofDrawCircle(ofGetWidth() / 2, ofGetHeight() / 2, valueParam.get());
 
 	// Circle max radius outline
 	ofSetColor(255, 100);
@@ -83,7 +88,7 @@ void ofApp::keyPressed(int key) {
 	ofLogNotice("ofApp") << "keyPressed() " << char(key);
 	if (key == ' ') {
 		// Restart tween on spacebar
-		tweenRadius.start();
+		tweener.start();
 	}
 }
 
@@ -92,5 +97,5 @@ void ofApp::exit() {
 	ofLogNotice("ofApp") << "exit()";
 	
 	// To save settings
-	tweenRadius.exit();
+	tweener.exit();
 }
