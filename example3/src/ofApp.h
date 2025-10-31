@@ -10,6 +10,7 @@ public:
 	void setup();
 	void update();
 	void draw();
+	void exit();
 
 	void keyPressed(int key);
 
@@ -17,15 +18,6 @@ public:
 	ofxTweenLiteHelper<float> tweenRadius;
 	ofxTweenLiteHelper<glm::vec2> tweenPosition;
 	ofxTweenLiteHelper<ofColor> tweenColor;
-
-	// Easing selector
-	int easeIndex = 10; // Default: CubicInOut
-	static const std::vector<ofEaseFunction>& getEaseModes() {
-		return ofxTweenLiteHelper<float>::getAllEaseModes();
-	}
-	static const std::vector<std::string>& getEaseNames() {
-		return ofxTweenLiteHelper<float>::getAllEaseNames();
-	}
 	
 	glm::vec2 posStart;
 	glm::vec2 posEnd;

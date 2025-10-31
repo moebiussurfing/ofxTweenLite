@@ -14,9 +14,10 @@ void ofApp::setup() {
 void ofApp::setupParameters() {
 	ofLogNotice("ofApp") << "setupParameters()";
 
+	// Initialize the target ofParameter<float>
 	valueParam.set("ValueParam", 0.0f, 0.0f, radiusMax);
-	
-	// Tweener setup with linked parameter
+
+	// Tweener setup with the target ofParameter<float> linked
 	tweener.setupParameter(valueParam);
 	
 	// Force overwrite settings can be done here if needed

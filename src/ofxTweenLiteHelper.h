@@ -5,6 +5,8 @@
 // for the ofxTweenLite.h originally by lukasz karluk.
 //
 
+// #define USE_OFXG__OFX_TWEEN_LITE_HELPER
+
 #pragma once
 #include "ofMain.h"
 #include "ofxTweenLite.h"
@@ -65,49 +67,6 @@ namespace ofxTweenLiteHelperUtils {
 		, ap_(nullptr) { 
 			// initialize optional linked parameter pointer
 			// setupParameters_();
-		}
-		
-		/// @brief Get the parameter group for adding to GUI
-		ofParameterGroup & getParameters() {
-			return params_;
-		}
-		
-		/// @brief Exit function to be called on app exit and save settings	
-		void exit() {
-			ofLogNotice("ofxTweenLiteHelper") << "exit()";
-			saveSettings();
-		}
-		
-		/// @brief Refresh GUI to minimize Advanced parameters group
-		void refreshGui(ofxPanel & gui) {
-			ofLogNotice("ofxTweenLiteHelper") << "refreshGui()";
-			auto & g = gui.getGroup(params_.getName());
-			g.getGroup(paramsAdvanced_.getName()).minimize();
-		}
-		
-		/// @brief Save settings to JSON file
-		void saveSettings() {
-			ofLogNotice("ofxTweenLiteHelper") << "saveSettings() -> " << pathSettings_;
-			ofJson settings;
-			ofSerialize(settings, params_);
-			bool b = ofSavePrettyJson(pathSettings_, settings);
-			if (b)
-			ofLogNotice("ofxTweenLiteHelper") << "Settings saved: " << pathSettings_;
-			else
-			ofLogError("ofxTweenLiteHelper") << "Unable to save settings: " << pathSettings_;
-		}
-		
-		/// @brief Load settings from JSON file
-		void loadSettings() {
-			ofLogNotice("ofxTweenLiteHelper") << "loadSettings() -> " << pathSettings_;
-			ofFile file(pathSettings_);
-			if (file.exists()) {
-				ofJson settings = ofLoadJson(pathSettings_);
-				ofDeserialize(settings, params_);
-				ofLogNotice("ofxTweenLiteHelper") << "Settings loaded: " << pathSettings_;
-			} else {
-				ofLogWarning("ofxTweenLiteHelper") << "Settings file not found: " << pathSettings_;
-			}
 		}
 		
 		//--
@@ -363,7 +322,7 @@ namespace ofxTweenLiteHelperUtils {
 		ofParameter<void> vStop_;
 		ofParameter<void> vPause_;
 		ofParameter<void> vResume_;
-
+		
 		private:
 		
 		ofEventListener e_pFrom_;
@@ -381,6 +340,49 @@ namespace ofxTweenLiteHelperUtils {
 		ofAbstractParameter* ap_;
 		
 		public:
+		
+		/// @brief Setup tween without linked ofParameter (auto-generates unique name)
+		/// Call this in ofApp::setup() for standalone tweens
+		void setup() {
+			ofLogNotice("ofxTweenLiteHelper") << "setup()";
+			std::string autoName = generateUniqueName_();
+			setName(autoName);
+		}
+		
+		/// @brief Setup tween with custom name (without linked ofParameter)
+		/// Call this in ofApp::setup() for standalone tweens with custom naming
+		void setup(const std::string & customName) {
+			ofLogNotice("ofxTweenLiteHelper") << "setup(" << customName << ")";
+			setName(customName);
+		}
+		private:
+		
+		/// @brief Generate unique name based on type T and static counter
+		std::string generateUniqueName_() {
+			std::string typeName = getTypeName_();
+			int counter = getNextCounter_();
+			return typeName + std::to_string(counter);
+		}
+		
+		/// @brief Get human-readable type name for template type T
+		std::string getTypeName_() {
+			// Use type_traits to determine type name
+			if (std::is_same<T, int>::value) return "Int";
+			if (std::is_same<T, float>::value) return "Float";
+			if (std::is_same<T, glm::vec2>::value) return "Vec2";
+			if (std::is_same<T, ofColor>::value) return "Color";
+			return "Unknown";
+		}
+		
+		/// @brief Get next counter value for this type (static per-type counter)
+		int getNextCounter_() {
+			// Static counter per type T
+			static std::atomic<int> counter(0);
+			return ++counter;
+		}
+		
+		public:
+		
 		/// @brief Setup link parameter
 		/// @warning The parameter must outlive this helper instance.
 		///          Typically safe when both are members of the same class.
@@ -428,13 +430,15 @@ namespace ofxTweenLiteHelperUtils {
 			}
 		}
 		
+		public:
+		
 		/// @brief Set the name of this tween (used for parameter group and JSON filename)
 		void setName(const std::string & name) {
 			ofLogNotice("ofxTweenLiteHelper") << "setName() "<< name;
 			
 			setupParameters_();
 			
-			tweenName_ = "Tween_" +name;
+			tweenName_ = "Tween_" + name;
 			params_.setName(tweenName_);
 			pathSettings_ = "settings_" + tweenName_ + ".json";
 			
@@ -442,10 +446,13 @@ namespace ofxTweenLiteHelperUtils {
 			
 			// Autoload settings so the user doesn't need to call it from ofApp
 			loadSettings();
-			
-			// Ensure sane defaults if range isn't configured (eg: float 0..1)
-			// ensureDefaultRangeIfUnset_();
 		}
+		
+		/// @brief Get the current name of this tween
+		std::string getName() const {
+			return tweenName_;
+		}
+		
 		private:
 		/// @brief Setup parameters and group
 		void setupParameters_() {
@@ -474,12 +481,6 @@ namespace ofxTweenLiteHelperUtils {
 			} else { // No linked ofParameter, use default construction
 				// No linked ofParameter, use type-appropriate defaults
 				setupDefaultParams_();
-				
-				// // Assume From is less than To initially: both same values
-				// pFrom_.setMin(pFrom_.get());
-				// pFrom_.setMax(pTo_.get());
-				// pTo_.setMin(pFrom_.get());
-				// pTo_.setMax(pTo_.get());
 			}
 			
 			params_.add(pDuration_.set("Duration", 1.0f, 0.1f, 10.0f));
@@ -543,14 +544,14 @@ namespace ofxTweenLiteHelperUtils {
 			ofLogNotice("ofxTweenLiteHelper") << "setupCallbacks_()";
 			
 			// From changed
-			e_pFrom_ = pFrom_.newListener([this](float & v) {
+			e_pFrom_ = pFrom_.newListener([this](T & v) {
 				from = v;
 			});			
 			// To changed
-			e_pTo_ = pTo_.newListener([this](float & v) {
+			e_pTo_ = pTo_.newListener([this](T & v) {
 				to = v;
 			});
-
+			
 			// Duration changed
 			e_pDuration_ = pDuration_.newListener([this](float & v) {
 				if (v <= 0.0f) v = 0.1f; // Validation
@@ -593,7 +594,7 @@ namespace ofxTweenLiteHelperUtils {
 		
 		// Internal start method 
 		void startInternal(const T & from_, const T & to_, float duration_, ofEaseFunction easeMode_, std::function<void()> onComplete_) {
-			ofLogNotice("ofxTweenLiteHelper") << "startInternal()";
+			// ofLogNotice("ofxTweenLiteHelper") << "startInternal()";
 			from = from_;
 			to = to_;
 			duration = duration_;
@@ -604,6 +605,51 @@ namespace ofxTweenLiteHelperUtils {
 			onComplete = onComplete_;
 			value = from;
 			if (onStart) onStart();
+		}
+		
+	public:
+		/// @brief Get the parameter group for adding to GUI
+		ofParameterGroup & getParameters() {
+			return params_;
+		}
+		/// @brief Exit function to be called on app exit and save settings	
+		void exit() {
+			ofLogNotice("ofxTweenLiteHelper") << "exit()";
+			saveSettings();
+		}
+
+		#ifdef USE_OFXG__OFX_TWEEN_LITE_HELPER
+		/// @brief Refresh GUI to minimize Advanced parameters group
+		void refreshGui(ofxPanel & gui) {
+			ofLogNotice("ofxTweenLiteHelper") << "refreshGui()";
+			auto & g = gui.getGroup(params_.getName());
+			g.getGroup(paramsAdvanced_.getName()).minimize();
+		}
+		#endif
+
+		/// @brief Save settings to JSON file
+		void saveSettings() {
+			ofLogNotice("ofxTweenLiteHelper") << "saveSettings() -> " << pathSettings_;
+			ofJson settings;
+			ofSerialize(settings, params_);
+			bool b = ofSavePrettyJson(pathSettings_, settings);
+			if (b)
+			ofLogNotice("ofxTweenLiteHelper") << "Settings saved: " << pathSettings_;
+			else
+			ofLogError("ofxTweenLiteHelper") << "Unable to save settings: " << pathSettings_;
+		}
+		
+		/// @brief Load settings from JSON file
+		void loadSettings() {
+			ofLogNotice("ofxTweenLiteHelper") << "loadSettings() -> " << pathSettings_;
+			ofFile file(pathSettings_);
+			if (file.exists()) {
+				ofJson settings = ofLoadJson(pathSettings_);
+				ofDeserialize(settings, params_);
+				ofLogNotice("ofxTweenLiteHelper") << "Settings loaded: " << pathSettings_;
+			} else {
+				ofLogWarning("ofxTweenLiteHelper") << "Settings file not found: " << pathSettings_;
+			}
 		}
 	};
 	

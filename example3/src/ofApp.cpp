@@ -13,23 +13,25 @@ void ofApp::setup(){
 	tweenRadius.setFrom(20.0f)
 		.setTo(80.0f)
 		.setDuration(2.0f)
-		.setEase(getEaseModes()[easeIndex])
 		.setChainFromCurrentValue(false);
 	
 	// Position tween: from left to right
 	tweenPosition.setFrom(posStart)
 		.setTo(posEnd)
 		.setDuration(2.0f)
-		.setEase(getEaseModes()[easeIndex])
 		.setChainFromCurrentValue(false);
 	
 	// Color tween: from red to blue
 	tweenColor.setFrom(ofColor(255,100,100))
 		.setTo(ofColor(100,150,255))
 		.setDuration(2.0f)
-		.setEase(getEaseModes()[easeIndex])
 		.setChainFromCurrentValue(false);
-	
+
+	// Setup all tweens (unique name for json settings filename will be auto generated)
+	tweenRadius.setup();
+	tweenPosition.setup();
+	tweenColor.setup();
+
 	// Start all tweens
 	tweenRadius.start();
 	tweenPosition.start();
@@ -69,9 +71,6 @@ void ofApp::draw(){
 	int y =40;
 	ofDrawBitmapString("Press SPACE to restart tweens", 20, y);
 	ofDrawBitmapString("Up/Down: change ease mode", 20, y=y+h);
-	ofDrawBitmapString("Current Ease: " + getEaseNames()[easeIndex], 20, y=y+h);
-	ofDrawBitmapString("Press 'c' to toggle chain mode", 20, y=y+h);
-	ofDrawBitmapString("Chain mode: " + std::string(tweenRadius.getChainFromCurrentValue() ? "ON" : "OFF"), 20, y=y+h);
 	
 	// Draw progress bar
 	float hh= 20;
@@ -86,34 +85,23 @@ void ofApp::draw(){
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
 	if(key == OF_KEY_UP){
-		easeIndex++;
-		if(easeIndex >= (int)getEaseModes().size()) easeIndex = 0;
-		// update ease for all tweens and restart
-		tweenRadius.setEase(getEaseModes()[easeIndex]);
-		tweenPosition.setEase(getEaseModes()[easeIndex]);
-		tweenColor.setEase(getEaseModes()[easeIndex]);
-		// Restart from initial starts
-		tweenRadius.start();
-		tweenPosition.start();
-		tweenColor.start();
-	} else if(key == OF_KEY_DOWN){
-		easeIndex--;
-		if(easeIndex < 0) easeIndex = (int)getEaseModes().size() - 1;
-		tweenRadius.setEase(getEaseModes()[easeIndex]);
-		tweenPosition.setEase(getEaseModes()[easeIndex]);
-		tweenColor.setEase(getEaseModes()[easeIndex]);
-		tweenRadius.start();
-		tweenPosition.start();
-		tweenColor.start();
-	} else if (key == 'c' || key == 'C'){
-		bool newChainMode = !tweenRadius.getChainFromCurrentValue();
-		tweenRadius.setChainFromCurrentValue(newChainMode);
-		tweenPosition.setChainFromCurrentValue(newChainMode);
-		tweenColor.setChainFromCurrentValue(newChainMode);
-	} else if (key == ' '){
+
+	} 
+	else if(key == OF_KEY_DOWN){
+
+	} 
+	else if (key == ' '){
 		// Restart tweens; start() semantics: if stopped -> start from initialFrom; if running -> honor chain flag
 		tweenRadius.start();
 		tweenPosition.start();
 		tweenColor.start();
 	}
+}
+
+//--------------------------------------------------------------
+void ofApp::exit(){
+	// Exit tweens to save json settings
+	tweenRadius.exit();
+	tweenPosition.exit();
+	tweenColor.exit();
 }

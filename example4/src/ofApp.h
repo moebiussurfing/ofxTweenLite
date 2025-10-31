@@ -17,11 +17,13 @@ private:
 	void setupGui();
 	void startup();
 
-	ofxTweenLiteHelper<float> tweener; // Init here the tween helper as float type
+	// Init here the tween helper as float type
+	ofxTweenLiteHelper<float> tweener; 
+	
+	ofParameter<float> valueParam;
 
 	float radiusMax = 200;
 
-	ofParameter<float> valueParam;
 	ofParameterGroup params;
 	ofxPanel gui;
 };
