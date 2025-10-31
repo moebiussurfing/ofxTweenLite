@@ -284,6 +284,34 @@ namespace ofxTweenLiteHelperUtils {
 			return names;
 		}
 		
+		/// @brief Get next ease type and restart tween
+		void nextEaseType() {
+			int current = static_cast<int>(pEaseType_.get());
+			int numModes = static_cast<int>(getAllEaseModes().size());
+			int next = (current + 1) % numModes;
+			pEaseType_.set(next);
+			start(); // Restart with new ease type
+		}
+		
+		/// @brief Get previous ease type and restart tween
+		void previousEaseType() {
+			int current = static_cast<int>(pEaseType_.get());
+			int numModes = static_cast<int>(getAllEaseModes().size());
+			int prev = (current - 1 + numModes) % numModes;
+			pEaseType_.set(prev);
+			start(); // Restart with new ease type
+		}
+		
+		/// @brief Get the name of the current ease type
+		std::string getCurrentEaseName() const {
+			int current = static_cast<int>(pEaseType_.get());
+			const auto & names = getAllEaseNames();
+			if (current >= 0 && current < static_cast<int>(names.size())) {
+				return names[current];
+			}
+			return "Unknown";
+		}
+		
 		//--
 		
 		private:

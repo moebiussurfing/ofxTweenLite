@@ -27,10 +27,10 @@ void ofApp::setup(){
 		.setDuration(2.0f)
 		.setChainFromCurrentValue(false);
 
-	// Setup all tweens (unique name for json settings filename will be auto generated)
-	tweenRadius.setup();
-	tweenPosition.setup();
-	tweenColor.setup();
+	// // Setup all tweens (unique name for json settings filename will be auto generated)
+	// tweenRadius.setup();
+	// tweenPosition.setup();
+	// tweenColor.setup();
 
 	// Start all tweens
 	tweenRadius.start();
@@ -71,6 +71,7 @@ void ofApp::draw(){
 	int y =40;
 	ofDrawBitmapString("Press SPACE to restart tweens", 20, y);
 	ofDrawBitmapString("Up/Down: change ease mode", 20, y=y+h);
+	ofDrawBitmapString("Ease: " + tweenRadius.getCurrentEaseName(), 20, y=y+h);
 	
 	// Draw progress bar
 	float hh= 20;
@@ -85,10 +86,14 @@ void ofApp::draw(){
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
 	if(key == OF_KEY_UP){
-
+		tweenRadius.nextEaseType();
+		tweenPosition.nextEaseType();
+		tweenColor.nextEaseType();
 	} 
 	else if(key == OF_KEY_DOWN){
-
+		tweenRadius.previousEaseType();
+		tweenPosition.previousEaseType();
+		tweenColor.previousEaseType();
 	} 
 	else if (key == ' '){
 		// Restart tweens; start() semantics: if stopped -> start from initialFrom; if running -> honor chain flag
