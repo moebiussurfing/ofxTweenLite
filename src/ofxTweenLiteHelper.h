@@ -6,6 +6,9 @@
 //
 
 #define USE_OFXGUI__OFXTWEENLITEHELPER
+#ifdef USE_OFXGUI__OFXTWEENLITEHELPER
+#include "ofxGui.h"
+#endif
 
 #pragma once
 #include "ofMain.h"
