@@ -16,6 +16,7 @@
 #include <vector>
 
 // Helper for interpolation
+// Implemented types: float, glm::vec2, ofColor
 namespace ofxTweenLiteHelperUtils {
 template <typename T>
 inline T lerp(const T & a, const T & b, float t) { return a + (b - a) * t; }
@@ -35,43 +36,29 @@ inline ofColor lerp(const ofColor & a, const ofColor & b, float t) {
 template <typename T>
 class ofxTweenLiteHelper {
 public:
-	ofxTweenLiteHelper()
-		: from(T {})
-		, to(T {})
-		, value(T {})
-		, initialFrom(T {})
-		, duration(1.0f)
-		, easeMode(OF_EASE_LINEAR_IN)
-		, startTime(0.0f)
-		, pauseTime(0.0f)
-		, finished(true)
-		, paused(false)
-		, chainFromCurrentValue(false)
-		, repeatCount(0)
-		, currentRepeat(0)
-		, currentProgress(0.0f)
-		, onStart(nullptr)
-		, onUpdate(nullptr)
-		, onComplete(nullptr)
-		, onCancel(nullptr)
-		, defaultConfigured_(false)
-		, tweenName_("Tween")
-		, pathSettings_("settings_tween.json") {
-		setupParameters_();
-	}
-
-	/// @brief Set the name of this tween (used for parameter group and JSON filename)
-	void setName(const std::string & name) {
-		ofLogNotice("ofxTweenLiteHelper") << "setName() "<< name;
-		tweenName_ = name;
-		params_.setName(name);
-		pathSettings_ = "settings_" + ofToLower(name) + ".json";
-		setupCallbacks_(); // Setup callbacks after parameters are fully initialized
-		// Autoload settings so the user doesn't need to call it from ofApp
-		loadSettings();
-		// Ensure sane defaults if range isn't configured (eg: float 0..1)
-		ensureDefaultRangeIfUnset_();
-	}
+    ofxTweenLiteHelper()
+        : from(T {})
+        , to(T {})
+        , value(T {})
+        , initialFrom(T {})
+        , duration(1.0f)
+        , easeMode(OF_EASE_LINEAR_IN)
+        , startTime(0.0f)
+        , pauseTime(0.0f)
+        , finished(true)
+        , paused(false)
+        , chainFromCurrentValue(false)
+        , currentProgress(0.0f)
+        , onStart(nullptr)
+        , onUpdate(nullptr)
+        , onComplete(nullptr)
+        , onCancel(nullptr)
+        // , defaultConfigured_(false)
+        , tweenName_("Tween")
+        , pathSettings_("settings_tween.json")
+        , ap_(nullptr) { // initialize optional linked parameter pointer
+        // setupParameters_();
+    }
 
 	/// @brief Get the parameter group for adding to GUI
 	ofParameterGroup & getParameters() {
@@ -116,14 +103,18 @@ public:
 		}
 	}
 
+	//--
+
 	// Fluent API
 	ofxTweenLiteHelper & setFrom(const T & v) {
 		from = v;
 		initialFrom = v; // remember the configured start value
+		pFrom_ = v; // sync with parameter
 		return *this;
 	}
 	ofxTweenLiteHelper & setTo(const T & v) {
 		to = v;
+		pTo_ = v; // sync with parameter
 		return *this;
 	}
 	ofxTweenLiteHelper & setDuration(float d) {
@@ -136,16 +127,14 @@ public:
 		pEaseType_ = static_cast<int>(e); // sync with parameter
 		return *this;
 	}
-	ofxTweenLiteHelper & setRepeat(int count) {
-		repeatCount = count;
-		pRepeatCount_ = count; // sync with parameter
-		return *this;
-	}
 	ofxTweenLiteHelper & setChainFromCurrentValue(bool chain) {
 		chainFromCurrentValue = chain;
 		pChainFromCurrent_ = chain; // sync with parameter
 		return *this;
 	}
+
+	//--
+
 	ofxTweenLiteHelper & onStartCallback(std::function<void()> cb) {
 		onStart = cb;
 		return *this;
@@ -167,6 +156,8 @@ public:
 		return *this;
 	}
 
+	//--
+
 	// Starts the tween for a value
 	void start(const T & from_, const T & to_, float duration_, ofEaseFunction easeMode_ = OF_EASE_LINEAR_IN, std::function<void()> onComplete_ = nullptr) {
 		ofLogNotice("ofxTweenLiteHelper") << "start(..)";
@@ -177,8 +168,8 @@ public:
 	// Starts the tween using previously set parameters
 	void start() {
 		ofLogNotice("ofxTweenLiteHelper") << "start()";
-		// Ensure default range for types that support normalized 0..1 when not configured
-		ensureDefaultRangeIfUnset_();
+		// // Ensure default range for types that support normalized 0..1 when not configured
+		// ensureDefaultRangeIfUnset_();
 		// If tween is currently running, honor chainFromCurrentValue: start from current value if chain enabled,
 		// otherwise start from the original initialFrom.
 		if (isRunning()) {
@@ -193,11 +184,18 @@ public:
 		}
 	}
 
-	// Cancels the tween
-	void cancel() {
-		ofLogNotice("ofxTweenLiteHelper") << "cancel()";
+	/// @brief Stops the tween and resets to initial 'from' value
+	void stop() {
+		ofLogNotice("ofxTweenLiteHelper") << "stop()";
 		finished = true;
+		paused = false;
+		value = initialFrom;
 		if (onCancel) onCancel();
+	}
+
+	// Cancels the tween (alias for stop)
+	void cancel() {
+		stop();
 	}
 
 	// Pauses the tween
@@ -236,16 +234,7 @@ public:
 			// Fix workaround: When tween completes, ensure exact final value
 			// regardless of framerate/timing precision
 			value = to;
-			currentRepeat++;
-			if (repeatCount > 0 && currentRepeat < repeatCount) {
-				// Loop: when looping we consider the chainFromCurrentValue flag as well
-				// Use startInternal with updateInitialFrom=false to preserve original start value
-				if (chainFromCurrentValue) {
-					startInternal(value, to, duration, easeMode, onComplete, false);
-				} else {
-					startInternal(initialFrom, to, duration, easeMode, onComplete, false);
-				}
-			} else {
+			{
 				finished = true;
 				// Internal callback (always runs to ensure exact final value)
 				if (onComplete) onComplete();
@@ -289,6 +278,8 @@ public:
 		return chainFromCurrentValue;
 	}
 
+	//--
+
 	// Static: get all ease modes
 	static const std::vector<ofEaseFunction> & getAllEaseModes() {
 		static std::vector<ofEaseFunction> modes = {
@@ -325,6 +316,8 @@ public:
 		return names;
 	}
 
+	//--
+
 private:
 	T from, to, value;
 	T initialFrom; // store the configured initial 'from' value so toggling chain doesn't change stopped tweens
@@ -335,15 +328,13 @@ private:
 	bool finished;
 	bool paused;
 	bool chainFromCurrentValue;
-	int repeatCount;
-	int currentRepeat;
 	float currentProgress; // Store calculated progress for consistent behavior
 	std::function<void()> onStart;
 	std::function<void()> onUpdate;
 	std::function<void()> onComplete;
 	std::function<void()> onUserComplete;
 	std::function<void()> onCancel;
-	bool defaultConfigured_;
+	// bool defaultConfigured_;
 
 	// Parameters and settings
 	std::string tweenName_;
@@ -352,66 +343,147 @@ public:
 	ofParameterGroup params_;
 	ofParameterGroup paramsAdvanced_;
 
+	ofParameter<T> pFrom_;
+	ofParameter<T> pTo_;
 	ofParameter<float> pDuration_;
 	ofParameter<int> pEaseType_;
 	ofParameter<std::string> pEaseName_;
-	ofParameter<int> pRepeatCount_;
 	ofParameter<bool> pChainFromCurrent_;
 	ofParameter<void> vStart_;
 	ofParameter<void> vStop_;
 	ofParameter<void> vPause_;
 	ofParameter<void> vResume_;
 private:
-	ofEventListener e_pDuration_;
-	ofEventListener e_pEaseType_;
-	ofEventListener e_pRepeatCount_;
-	ofEventListener e_pChainFromCurrent_;
-	ofEventListener e_vStart_;
-	ofEventListener e_vStop_;
-	ofEventListener e_vPause_;
-	ofEventListener e_vResume_;
+    ofEventListener e_pDuration_;
+    ofEventListener e_pEaseType_;
+    ofEventListener e_pChainFromCurrent_;
+    ofEventListener e_vStart_;
+    ofEventListener e_vStop_;
+    ofEventListener e_vPause_;
+    ofEventListener e_vResume_;
+
+	// Optional link to an external parameter. Pointer keeps this helper default-constructible.
+	ofAbstractParameter* ap_;
+
+    public:
+    /// @brief Setup link parameter
+    void setupLinkParameter(ofAbstractParameter& aParameter) {
+			ap_ = &aParameter;
+			ofLogNotice("ofxTweenLiteHelper") << "setupLinkParameter() name: " << ap_->getName();
+            
+            bool bValidType = false;
+
+            // Print type info
+			auto parameterFloat = dynamic_cast<ofParameter<float>*>(ap_);
+            if (parameterFloat)
+            {
+                ofLogNotice("ofxTweenLiteHelper") << "type float";
+				this->setFrom(parameterFloat->getMin());
+				this->setTo(parameterFloat->getMax());
+                bValidType = true;
+            }
+			auto parameterVec2f = dynamic_cast<ofParameter<glm::vec2>*>(ap_);
+            if (parameterVec2f)
+            {
+                ofLogNotice("ofxTweenLiteHelper") << "type glm::vec2";
+                bValidType = true;
+            }
+			auto parameterColor = dynamic_cast<ofParameter<ofColor>*>(ap_);
+            if (parameterColor)
+            {
+                ofLogNotice("ofxTweenLiteHelper") << "type ofColor";
+                bValidType = true;
+            }
+
+            if(bValidType){
+				setName(ap_->getName());
+            }
+    }
+
+	/// @brief Set the name of this tween (used for parameter group and JSON filename)
+	void setName(const std::string & name) {
+		ofLogNotice("ofxTweenLiteHelper") << "setName() "<< name;
+
+		setupParameters_();
+
+		tweenName_ = name;
+		params_.setName(name);
+		pathSettings_ = "settings_" + name + ".json";
+
+		setupCallbacks_(); // Setup callbacks after parameters are fully initialized
+
+		// Autoload settings so the user doesn't need to call it from ofApp
+		loadSettings();
+
+		// Ensure sane defaults if range isn't configured (eg: float 0..1)
+		// ensureDefaultRangeIfUnset_();
+	}
 
 	/// @brief Setup parameters and group
 	void setupParameters_() {
 		ofLogNotice("ofxTweenLiteHelper") << "setupParameters_()";
 		params_.setName(tweenName_);
+		
+		if (ap_ != nullptr) {
+			// Cast to the templated type T
+			auto typedParam = dynamic_cast<ofParameter<T>*>(ap_);
+			if (typedParam) {
+				params_.add(pFrom_.set("From", T{}, typedParam->getMin(), typedParam->getMax()));
+				params_.add(pTo_.set("To", T{}, typedParam->getMin(), typedParam->getMax()));
+			} else {
+				// Fallback if cast fails (type mismatch)
+				params_.add(pFrom_.set("From", T{}));
+				params_.add(pTo_.set("To", T{}));
+			}
+		} else {
+			params_.add(pFrom_.set("From", T{}));
+			params_.add(pTo_.set("To", T{}));
+		}
+		
 		params_.add(pDuration_.set("Duration", 1.0f, 0.1f, 10.0f));
 		params_.add(pEaseType_.set("EaseType", OF_EASE_LINEAR_IN, 0, 32));
 		params_.add(pEaseName_.set("EaseName", "LinearIn"));
 		params_.add(vStart_.set("Start"));
 		paramsAdvanced_.setName("Advanced");
-		paramsAdvanced_.add(pRepeatCount_.set("Repeat", 0, 0, 10));
 		paramsAdvanced_.add(pChainFromCurrent_.set("Chain", false));
 		paramsAdvanced_.add(vStop_.set("Stop"));
 		paramsAdvanced_.add(vPause_.set("Pause"));
 		paramsAdvanced_.add(vResume_.set("Resume"));
 		params_.add(paramsAdvanced_);
+
+		// // Assume From is less than To initially: both same values
+		// pFrom_.setMin(pFrom_.get());
+		// pFrom_.setMax(pTo_.get());
+		// pTo_.setMin(pFrom_.get());
+		// pTo_.setMax(pTo_.get());
 		
 		// Make EaseName non-serializable (read-only display)
 		pEaseName_.setSerializable(false);
 	}
 
-	// Ensure a sane default range (0..1) for floating point tweens if user hasn't configured from/to.
-	// For non-floating types, do nothing.
-	template <typename U = T>
-	std::enable_if_t<std::is_floating_point<U>::value, void>
-	ensureDefaultRangeIfUnset_() {
-		if (defaultConfigured_) return;
-		U zero{};
-		if (from == zero && to == zero) {
-			from = static_cast<U>(0);
-			initialFrom = from;
-			to = static_cast<U>(1);
-		}
-		defaultConfigured_ = true;
-	}
+	// // Ensure a sane default range (0..1) for floating point tweens if user hasn't configured from/to.
+	// // For non-floating types, do nothing.
+	// template <typename U = T>
+	// std::enable_if_t<std::is_floating_point<U>::value, void>
+	// ensureDefaultRangeIfUnset_() {
+	// 	if (defaultConfigured_) return;
+	// 	U zero{};
+	// 	if (from == zero && to == zero) {
+	// 		from = static_cast<U>(0);
+	// 		initialFrom = from;
+	// 		to = static_cast<U>(1);
+	// 		pFrom_ = from; // sync with parameter
+	// 		pTo_ = to; // sync with parameter
+	// 	}
+	// 	defaultConfigured_ = true;
+	// }
 
-	template <typename U = T>
-	std::enable_if_t<!std::is_floating_point<U>::value, void>
-	ensureDefaultRangeIfUnset_() {
-		// Not applicable; mark as configured to avoid repeated checks.
-		defaultConfigured_ = true;
-	}
+	// template <typename U = T>
+	// std::enable_if_t<!std::is_floating_point<U>::value, void>
+	// ensureDefaultRangeIfUnset_() {
+	// 	// Not applicable; mark as configured to avoid repeated checks.
+	// 	defaultConfigured_ = true;
+	// }
 
 	/// @brief Setup parameter callbacks
 	void setupCallbacks_() {
@@ -434,12 +506,6 @@ private:
 			}
 		});
 
-		// Repeat count changed
-		e_pRepeatCount_ = pRepeatCount_.newListener([this](int & v) {
-			if (v < 0) v = 0; // Validation
-			repeatCount = v;
-		});
-
 		// Chain from current changed
 		e_pChainFromCurrent_ = pChainFromCurrent_.newListener([this](bool & v) {
 			chainFromCurrentValue = v;
@@ -451,7 +517,7 @@ private:
 		});
 
 		e_vStop_ = vStop_.newListener([this](const void*) {
-			cancel();
+			stop();
 		});
 
 		e_vPause_ = vPause_.newListener([this](const void*) {
@@ -476,7 +542,6 @@ private:
 		startTime = ofGetElapsedTimef();
 		finished = false;
 		paused = false;
-		currentRepeat = 0;
 		onComplete = onComplete_;
 		value = from;
 		if (onStart) onStart();

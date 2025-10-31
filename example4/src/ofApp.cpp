@@ -14,28 +14,19 @@ void ofApp::setup() {
 void ofApp::setupParameters() {
 	ofLogNotice("ofApp") << "setupParameters()";
 
+	valueParamTweened.set("TweenValue", 0.0f, 0.0f, radiusMax);
+
 	// Setup main parameter group
 	params.setName("Example4");
-	params.add(valueParamTweened.set("Tween Progress", 0.0f, 0.0f, radiusMax));
+	params.add(valueParamTweened);
 
-	// Setup tween with name
-	// // Initialize setup settings if desired
-	// tweenRadius.setFrom(0.0f);
-	// tweenRadius.setTo(radiusMax);
+	tweenRadius.setupLinkParameter(valueParamTweened);
 
-	// Will load settings from settings_radius.json after
-	tweenRadius.setName("Radius");
-
-	// Overwrite loaded JSON settings if desired
-	tweenRadius.setFrom(0.0f);
-	tweenRadius.setTo(radiusMax);
-
-	// Setup JSON settings loaded above can be forced and overwritten here
-	// No manual configuration needed: helper autoloads settings and defaults to 0..1 for floats
+	//--
 
 	// Add tween parameters to main group (two valid approaches)
 	params.add(tweenRadius.getParameters());
-	// params.add(tweenRadius.params_());
+	// params.add(tweenRadius.params_);
 
 	// Setup user callback for custom behavior (e.g., state machine, workflow)
 	tweenRadius.onUserCompleteCallback([this]() {
