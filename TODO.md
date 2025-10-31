@@ -3,6 +3,7 @@
 ## DO NOW:
 
 - `stop` debe resetear value a `from` y `progress` a 0
+- aplica valor directamente al ofParam
 
 
 ## HOWTO: RULES:

@@ -367,9 +367,9 @@ private:
 
     public:
     /// @brief Setup link parameter
-    void setupLinkParameter(ofAbstractParameter& aParameter) {
+    void setupParameter(ofAbstractParameter& aParameter) {
 			ap_ = &aParameter;
-			ofLogNotice("ofxTweenLiteHelper") << "setupLinkParameter() name: " << ap_->getName();
+			ofLogNotice("ofxTweenLiteHelper") << "setupParameter() name: " << ap_->getName();
             
             bool bValidType = false;
 

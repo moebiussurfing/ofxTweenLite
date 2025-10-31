@@ -14,13 +14,13 @@ void ofApp::setup() {
 void ofApp::setupParameters() {
 	ofLogNotice("ofApp") << "setupParameters()";
 
-	valueParamTweened.set("TweenValue", 0.0f, 0.0f, radiusMax);
+	valueParamTweened.set("TweenValueParam", 0.0f, 0.0f, radiusMax);
 
 	// Setup main parameter group
 	params.setName("Example4");
 	params.add(valueParamTweened);
 
-	tweenRadius.setupLinkParameter(valueParamTweened);
+	tweenRadius.setupParameter(valueParamTweened);
 
 	//--
 
