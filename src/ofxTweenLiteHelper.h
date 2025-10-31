@@ -5,7 +5,7 @@
 // for the ofxTweenLite.h originally by lukasz karluk.
 //
 
-// #define USE_OFXG__OFX_TWEEN_LITE_HELPER
+#define USE_OFXGUI__OFXTWEENLITEHELPER
 
 #pragma once
 #include "ofMain.h"
@@ -125,7 +125,7 @@ namespace ofxTweenLiteHelperUtils {
 		// Starts the tween for a value
 		void start(const T & from_, const T & to_, float duration_, ofEaseFunction easeMode_ = OF_EASE_LINEAR_IN, std::function<void()> onComplete_ = nullptr) {
 			ofLogNotice("ofxTweenLiteHelper") << "start(..)";
-			startInternal(from_, to_, duration_, easeMode_, onComplete_, true);
+			startInternal(from_, to_, duration_, easeMode_, onComplete_);
 		}
 		
 		// Starts the tween using previously set parameters
@@ -217,6 +217,7 @@ namespace ofxTweenLiteHelperUtils {
 				value = to;
 				pCurrentProgress_.set(1.0f);
 				finished = true;
+				from=pFrom_.get(); // sync from parameter to fix chaining mode
 				
 				// Internal callback (always runs to ensure exact final value)
 				if (onComplete) onComplete();
@@ -290,7 +291,7 @@ namespace ofxTweenLiteHelperUtils {
 			int numModes = static_cast<int>(getAllEaseModes().size());
 			int next = (current + 1) % numModes;
 			pEaseType_.set(next);
-			start(); // Restart with new ease type
+			// start(); // Restart with new ease type
 		}
 		
 		/// @brief Get previous ease type and restart tween
@@ -299,7 +300,7 @@ namespace ofxTweenLiteHelperUtils {
 			int numModes = static_cast<int>(getAllEaseModes().size());
 			int prev = (current - 1 + numModes) % numModes;
 			pEaseType_.set(prev);
-			start(); // Restart with new ease type
+			// start(); // Restart with new ease type
 		}
 		
 		/// @brief Get the name of the current ease type
@@ -635,7 +636,7 @@ namespace ofxTweenLiteHelperUtils {
 			if (onStart) onStart();
 		}
 		
-	public:
+		public:
 		/// @brief Get the parameter group for adding to GUI
 		ofParameterGroup & getParameters() {
 			return params_;
@@ -645,8 +646,8 @@ namespace ofxTweenLiteHelperUtils {
 			ofLogNotice("ofxTweenLiteHelper") << "exit()";
 			saveSettings();
 		}
-
-		#ifdef USE_OFXG__OFX_TWEEN_LITE_HELPER
+		
+		#ifdef USE_OFXGUI__OFXTWEENLITEHELPER
 		/// @brief Refresh GUI to minimize Advanced parameters group
 		void refreshGui(ofxPanel & gui) {
 			ofLogNotice("ofxTweenLiteHelper") << "refreshGui()";
@@ -654,7 +655,7 @@ namespace ofxTweenLiteHelperUtils {
 			g.getGroup(paramsAdvanced_.getName()).minimize();
 		}
 		#endif
-
+		
 		/// @brief Save settings to JSON file
 		void saveSettings() {
 			ofLogNotice("ofxTweenLiteHelper") << "saveSettings() -> " << pathSettings_;

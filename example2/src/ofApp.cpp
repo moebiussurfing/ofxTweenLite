@@ -5,8 +5,6 @@ void ofApp::setup() {
 	startX = 100;
 	endX = 700;
 
-	currentEaseIdx = 0;
-
 	// Initial background color
 	bgColor = ofColor::white;
 
@@ -17,9 +15,10 @@ void ofApp::setup() {
 	};
 
 	// Start tween with selected ease mode and external callback
-	tween.start(startX, endX, 2.0f,
-		ofxTweenLiteHelper<float>::getAllEaseModes()[currentEaseIdx],
-		onTweenComplete);
+	tween.setFrom(startX).setTo(endX).setDuration(2.0f).onCompleteCallback(onTweenComplete);
+	
+	//TODO: Must fix: Allow parameter setup and settings handling
+	// tween.setup();
 }
 
 //--------------------------------------------------------------
@@ -39,15 +38,16 @@ void ofApp::draw() {
 	ofSetColor(128, 200);
 	ofDrawCircle(startX, ofGetHeight() / 2, 4);
 	ofDrawCircle(endX, ofGetHeight() / 2, 4);
-
+	ofDrawLine(startX, ofGetHeight() / 2, tween.getValue(), ofGetHeight() / 2);
+	
 	// Ball center
 	ofSetColor(255, 200);
 	ofDrawCircle(tween.getValue(), ofGetHeight() / 2, 2);
 
 	// Draw progress bar
-	float barWidth = 400;
+	float barWidth = endX-startX;
 	float barHeight = 25;
-	float barX = (ofGetWidth() - barWidth) / 2;
+	float barX = startX;
 	float barY = ofGetHeight() - 80;
 	float progress = tween.getProgress();
 
@@ -62,30 +62,26 @@ void ofApp::draw() {
 	ofSetColor(0);
 	ofDrawBitmapStringHighlight("Press SPACE to restart animation", 20, 30);
 	ofDrawBitmapStringHighlight("Use LEFT/RIGHT arrows to change ease mode", 20, 50);
-	ofDrawBitmapStringHighlight("Current ease mode: " + ofxTweenLiteHelper<float>::getAllEaseNames()[currentEaseIdx], 20, 70);
+	ofDrawBitmapStringHighlight("Current ease mode: " + tween.getCurrentEaseName(), 20, 70);
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key) {
-	int numModes = ofxTweenLiteHelper<float>::getAllEaseModes().size();
-	float fromValue = tween.isFinished() ? startX : tween.getValue();
-	if (fromValue == endX) fromValue = startX;
+
 	if (key == ' ') {
-		// Restart tween with current ease mode and external callback
-		tween.start(fromValue, endX, 2.0f,
-			ofxTweenLiteHelper<float>::getAllEaseModes()[currentEaseIdx],
-			onTweenComplete);
+		tween.start();
 	}
 	if (key == OF_KEY_LEFT) {
-		currentEaseIdx = (currentEaseIdx - 1 + numModes) % numModes;
-		tween.start(fromValue, endX, 2.0f,
-			ofxTweenLiteHelper<float>::getAllEaseModes()[currentEaseIdx],
-			onTweenComplete);
+		tween.previousEaseType();
+		tween.start();
 	}
 	if (key == OF_KEY_RIGHT) {
-		currentEaseIdx = (currentEaseIdx + 1) % numModes;
-		tween.start(fromValue, endX, 2.0f,
-			ofxTweenLiteHelper<float>::getAllEaseModes()[currentEaseIdx],
-			onTweenComplete);
+		tween.nextEaseType();
+		tween.start();
 	}
+}
+
+//--------------------------------------------------------------
+void ofApp::exit() {
+	tween.exit();
 }
