@@ -5,8 +5,8 @@
 // for the ofxTweenLite.h originally by lukasz karluk.
 //
 
-#define USE_OFXGUI__OFXTWEENLITEHELPER
-#ifdef USE_OFXGUI__OFXTWEENLITEHELPER
+#define USE_OFXGUI__OFX_TWEEN_LITE_HELPER
+#ifdef USE_OFXGUI__OFX_TWEEN_LITE_HELPER
 #include "ofxGui.h"
 #endif
 
@@ -23,7 +23,8 @@
 // Helper for interpolation
 // Implemented types: int, float, glm::vec2, ofColor
 namespace ofxTweenLiteHelperUtils {
-	// Generic template (float)
+	// Generic template 
+	// float
 	template <typename T>
 	inline T lerp(const T & a, const T & b, float t) { return a + (b - a) * t; }
 	// int
@@ -233,7 +234,6 @@ namespace ofxTweenLiteHelperUtils {
 		T getValue() const {
 			return value;
 		}
-		
 		// Returns normalized progress (0 to1)
 		float getProgress() {
 			return pCurrentProgress_.get();
@@ -295,8 +295,7 @@ namespace ofxTweenLiteHelperUtils {
 			int next = (current + 1) % numModes;
 			pEaseType_.set(next);
 			// start(); // Restart with new ease type
-		}
-		
+		}		
 		/// @brief Get previous ease type and restart tween
 		void previousEaseType() {
 			int current = static_cast<int>(pEaseType_.get());
@@ -304,8 +303,7 @@ namespace ofxTweenLiteHelperUtils {
 			int prev = (current - 1 + numModes) % numModes;
 			pEaseType_.set(prev);
 			// start(); // Restart with new ease type
-		}
-		
+		}		
 		/// @brief Get the name of the current ease type
 		std::string getCurrentEaseName() const {
 			int current = static_cast<int>(pEaseType_.get());
@@ -319,7 +317,6 @@ namespace ofxTweenLiteHelperUtils {
 		//--
 		
 		private:
-		
 		T from, to, value;
 		float duration;
 		ofEaseFunction easeMode;
@@ -339,10 +336,8 @@ namespace ofxTweenLiteHelperUtils {
 		std::string pathSettings_;
 		
 		public:
-		
 		ofParameterGroup params_;
 		ofParameterGroup paramsAdvanced_;
-		
 		ofParameter<T> pFrom_;
 		ofParameter<T> pTo_;
 		ofParameter<float> pDuration_;
@@ -356,7 +351,6 @@ namespace ofxTweenLiteHelperUtils {
 		ofParameter<void> vResume_;
 		
 		private:
-		
 		ofEventListener e_pFrom_;
 		ofEventListener e_pTo_;
 		ofEventListener e_pDuration_;
@@ -372,7 +366,6 @@ namespace ofxTweenLiteHelperUtils {
 		ofAbstractParameter* ap_;
 		
 		public:
-		
 		/// @brief Setup tween without linked ofParameter (auto-generates unique name)
 		/// Call this in ofApp::setup() for standalone tweens
 		void setup() {
@@ -387,8 +380,8 @@ namespace ofxTweenLiteHelperUtils {
 			ofLogNotice("ofxTweenLiteHelper") << "setup(" << customName << ")";
 			setName(customName);
 		}
-		private:
 		
+		private:
 		/// @brief Generate unique name based on type T and static counter
 		std::string generateUniqueName_() {
 			std::string typeName = getTypeName_();
@@ -414,7 +407,6 @@ namespace ofxTweenLiteHelperUtils {
 		}
 		
 		public:
-		
 		/// @brief Setup link parameter
 		/// @warning The parameter must outlive this helper instance.
 		///          Typically safe when both are members of the same class.
@@ -462,8 +454,7 @@ namespace ofxTweenLiteHelperUtils {
 			}
 		}
 		
-		public:
-		
+		private:
 		/// @brief Set the name of this tween (used for parameter group and JSON filename)
 		void setName(const std::string & name) {
 			ofLogNotice("ofxTweenLiteHelper") << "setName() "<< name;
@@ -480,6 +471,7 @@ namespace ofxTweenLiteHelperUtils {
 			loadSettings();
 		}
 		
+		public:
 		/// @brief Get the current name of this tween
 		std::string getName() const {
 			return tweenName_;
@@ -532,7 +524,6 @@ namespace ofxTweenLiteHelperUtils {
 		}
 		
 		private:
-		
 		/// @brief Setup default parameters based on type T
 		// int
 		template <typename U = T>
@@ -542,7 +533,6 @@ namespace ofxTweenLiteHelperUtils {
 			params_.add(pFrom_.set("From", 0, 0, 100));
 			params_.add(pTo_.set("To", 100, 0, 100));
 		}
-		
 		// float
 		template <typename U = T>
 		typename std::enable_if<std::is_same<U, float>::value>::type
@@ -551,7 +541,6 @@ namespace ofxTweenLiteHelperUtils {
 			params_.add(pFrom_.set("From", 0.0f, 0.0f, 1.0f));
 			params_.add(pTo_.set("To", 1.0f, 0.0f, 1.0f));
 		}
-		
 		// vec2
 		template <typename U = T>
 		typename std::enable_if<std::is_same<U, glm::vec2>::value>::type
@@ -578,7 +567,8 @@ namespace ofxTweenLiteHelperUtils {
 			// From changed
 			e_pFrom_ = pFrom_.newListener([this](T & v) {
 				from = v;
-			});			
+			});	
+
 			// To changed
 			e_pTo_ = pTo_.newListener([this](T & v) {
 				to = v;
@@ -638,27 +628,7 @@ namespace ofxTweenLiteHelperUtils {
 			value = from;
 			if (onStart) onStart();
 		}
-		
 		public:
-		/// @brief Get the parameter group for adding to GUI
-		ofParameterGroup & getParameters() {
-			return params_;
-		}
-		/// @brief Exit function to be called on app exit and save settings	
-		void exit() {
-			ofLogNotice("ofxTweenLiteHelper") << "exit()";
-			saveSettings();
-		}
-		
-		#ifdef USE_OFXGUI__OFXTWEENLITEHELPER
-		/// @brief Refresh GUI to minimize Advanced parameters group
-		void refreshGui(ofxPanel & gui) {
-			ofLogNotice("ofxTweenLiteHelper") << "refreshGui()";
-			auto & g = gui.getGroup(params_.getName());
-			g.getGroup(paramsAdvanced_.getName()).minimize();
-		}
-		#endif
-		
 		/// @brief Save settings to JSON file
 		void saveSettings() {
 			ofLogNotice("ofxTweenLiteHelper") << "saveSettings() -> " << pathSettings_;
@@ -683,5 +653,32 @@ namespace ofxTweenLiteHelperUtils {
 				ofLogWarning("ofxTweenLiteHelper") << "Settings file not found: " << pathSettings_;
 			}
 		}
+		
+		public:
+		/// @brief Get the parameter group for adding to GUI
+		ofParameterGroup & getParameters() {
+			return params_;
+		}
+
+		/// @brief Exit function to be called on app exit and save settings	
+		void exit() {
+			ofLogNotice("ofxTweenLiteHelper") << "exit()";
+			saveSettings();
+		}
+		
+		#ifdef USE_OFXGUI__OFX_TWEEN_LITE_HELPER
+		/// @brief Refresh gui panel to minimize Advanced parameters group
+		void refreshGui(ofxPanel & gui) {
+			ofLogNotice("ofxTweenLiteHelper") << "refreshGui()";
+			auto & g = gui.getGroup(params_.getName());
+			g.getGroup(paramsAdvanced_.getName()).minimize();
+		}
+		/// @brief Refresh gui group to minimize Advanced parameters group
+		void refreshGui(ofxGuiGroup & group) {
+			ofLogNotice("ofxTweenLiteHelper") << "refreshGui()";
+			auto & g = group.getGroup(params_.getName());
+			g.getGroup(paramsAdvanced_.getName()).minimize();
+		}
+		#endif
 	};
 	
