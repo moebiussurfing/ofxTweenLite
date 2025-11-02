@@ -17,8 +17,8 @@ void ofApp::setup() {
 	// Start tween with selected ease mode and external callback
 	tween.setFrom(startX).setTo(endX).setDuration(2.0f).onCompleteCallback(onTweenComplete);
 	
-	//TODO: Must fix: Allow parameter setup and settings handling
-	// tween.setup();
+	//TODO: Must fix: Allow parameter setup and settings handling?
+	 tween.setup();
 }
 
 //--------------------------------------------------------------

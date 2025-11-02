@@ -8,7 +8,12 @@ void ofApp::setup(){
 	// Configure start / end positions based on current window size
 	posStart = glm::vec2(100, ofGetHeight() / 2.0f);
 	posEnd = glm::vec2(ofGetWidth() - 100, ofGetHeight() / 2.0f - 100);
-	
+
+	// Setup all tweens (unique name for json settings filename will be auto generated)
+	tweenRadius.setup();
+	tweenPosition.setup();
+	tweenColor.setup();
+
 	// Radius tween: from small to large
 	tweenRadius.setFrom(20.0f)
 		.setTo(80.0f)
@@ -26,11 +31,6 @@ void ofApp::setup(){
 		.setTo(ofColor(100,150,255))
 		.setDuration(2.0f)
 		.setChainFromCurrentValue(false);
-
-	// // Setup all tweens (unique name for json settings filename will be auto generated)
-	// tweenRadius.setup();
-	// tweenPosition.setup();
-	// tweenColor.setup();
 
 	// Start all tweens
 	tweenRadius.start();
