@@ -5,7 +5,7 @@
 // for the ofxTweenLite.h originally by lukasz karluk.
 //
 
-#define USE_OFX_GUI__OFX_TWEEN_LITE_HELPER
+//#define USE_OFX_GUI__OFX_TWEEN_LITE_HELPER // -> cooment if you won't use ofxGui in your project
 #ifdef USE_OFX_GUI__OFX_TWEEN_LITE_HELPER
 	#include "ofxGui.h"
 #endif
