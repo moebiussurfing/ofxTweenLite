@@ -18,7 +18,7 @@ void ofApp::setupParameters() {
 	valueParam.set("ValueParam", 0.0f, 0.0f, radiusMax);
 
 	// Tweener setup with the target ofParameter<float> linked
-	tweener.setupParameter(valueParam);
+	tweener.setup(valueParam);
 	
 	// Force overwrite settings can be done here if needed
 	// tweener.setFrom(0.0f).setTo(radiusMax).setDuration(2.0f).setEase(OF_EASE_QUAD_IN_OUT);
