@@ -4,6 +4,10 @@
 
 #include "ofxTweenLiteHelper.h"
 
+/*
+//#define USE_OFX_GUI__OFX_TWEEN_LITE_HELPER // -> comment in ofxTweenLiteHelper.h as we are not using ofxGui in this project
+*/
+
 class ofApp : public ofBaseApp {
 
 public:
