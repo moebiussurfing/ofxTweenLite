@@ -15,9 +15,6 @@
 #include "ofxTweenLite.h"
 #include <atomic>
 #include <functional>
-//#include <glm/glm.hpp>
-//#include <string>
-//#include <type_traits>
 #include <vector>
 
 // Helper for interpolation
@@ -445,7 +442,7 @@ private:
 		setupCallbacks_(); // Setup callbacks after parameters are fully initialized
 
 		// Autoload settings so the user doesn't need to call it from ofApp
-		loadSettings();
+		if(!bDisableInternalJsonSettings) loadSettings();
 	}
 
 public:
@@ -666,7 +663,8 @@ public:
 	/// @brief Exit function to be called on app exit and save settings
 	void exit() {
 		ofLogNotice("ofxTweenLiteHelper") << "exit()";
-		saveSettings();
+		if(!bDisableInternalJsonSettings)
+			saveSettings();
 	}
 
 #ifdef USE_OFX_GUI__OFX_TWEEN_LITE_HELPER
@@ -683,4 +681,9 @@ public:
 		g.getGroup(paramsAdvanced_.getName()).minimize();
 	}
 #endif
+	
+private:
+	bool bDisableInternalJsonSettings = false;
+public:
+	void setDisableInternalJsonSettings(bool b) { bDisableInternalJsonSettings = b; }
 };
