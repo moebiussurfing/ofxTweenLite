@@ -65,7 +65,8 @@ public:
 		, onCancel(nullptr)
 		, tweenName_("Tween")
 		, pathSettings_("settings_tween.json")
-		, ap_(nullptr) {
+		, ap_(nullptr)
+		, bIsInitialized_(false) {
 		// initialize optional linked parameter pointer
 		// setupParameters_();
 	}
@@ -362,6 +363,9 @@ private:
 	// Pointer keeps this helper default-constructible.
 	ofAbstractParameter * ap_;
 
+	// Flag to prevent callbacks during initialization
+	bool bIsInitialized_;
+
 public:
 	/// @brief Setup tween without linked ofParameter (auto-generates unique name)
 	/// Call this in ofApp::setup() for standalone tweens
@@ -433,16 +437,19 @@ private:
 	void setName(const std::string & name) {
 		ofLogNotice("ofxTweenLiteHelper") << "setName() " << name;
 
-		setupParameters_();
-
 		tweenName_ = "Tween_" + name;
-		params_.setName(tweenName_);
 		pathSettings_ = "settings_" + tweenName_ + ".json";
 
+		setupParameters_();
+		params_.setName(tweenName_);
+		
 		setupCallbacks_(); // Setup callbacks after parameters are fully initialized
 
 		// Autoload settings so the user doesn't need to call it from ofApp
 		if(!bDisableInternalJsonSettings) loadSettings();
+		
+		// Mark as fully initialized after all setup is complete
+		bIsInitialized_ = true;
 	}
 
 public:
@@ -540,22 +547,26 @@ private:
 
 		// From changed
 		e_pFrom_ = pFrom_.newListener([this](T & v) {
+			if (!bIsInitialized_) return;
 			from = v;
 		});
 
 		// To changed
 		e_pTo_ = pTo_.newListener([this](T & v) {
+			if (!bIsInitialized_) return;
 			to = v;
 		});
 
 		// Duration changed
 		e_pDuration_ = pDuration_.newListener([this](float & v) {
+			if (!bIsInitialized_) return;
 			if (v <= 0.0f) v = 0.1f; // Validation
 			duration = v;
 		});
 
 		// Ease type changed
 		e_pEaseType_ = pEaseType_.newListener([this](int & v) {
+			if (!bIsInitialized_) return;
 			v = ofClamp(v, 0, 32); // Validation
 			easeMode = static_cast<ofEaseFunction>(v);
 			// Update ease name
@@ -567,23 +578,28 @@ private:
 
 		// Chain from current changed
 		e_pChainFromCurrent_ = pChainFromCurrent_.newListener([this](bool & v) {
+			if (!bIsInitialized_) return;
 			// chainFromCurrentValue = v;
 		});
 
 		// Button callbacks - ofParameter<void> signature uses const void* sender
 		e_vStart_ = vStart_.newListener([this](const void *) {
+			if (!bIsInitialized_) return;
 			start();
 		});
 
 		e_vStop_ = vStop_.newListener([this](const void *) {
+			if (!bIsInitialized_) return;
 			stop();
 		});
 
 		e_vPause_ = vPause_.newListener([this](const void *) {
+			if (!bIsInitialized_) return;
 			pause();
 		});
 
 		e_vResume_ = vResume_.newListener([this](const void *) {
+			if (!bIsInitialized_) return;
 			resume();
 		});
 	}
