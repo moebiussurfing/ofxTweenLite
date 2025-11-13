@@ -10,10 +10,6 @@
 
 #include "ofMain.h"
 
-#ifndef PI
-#define PI 3.14159265358979323846f
-#endif
-
 //----------------------------------------------------------------------- ofxEasing
 class ofxEasing {
 public:
@@ -107,14 +103,14 @@ public:
 		float a=c;
 		float s=p/4;
 		float postFix =a*pow(2,10*(t-=1)); // this is a fix, again, with post-increment operators
-		return -(postFix * sin((t*d-s)*(2*PI)/p )) + b;
+		return -(postFix * sin((t*d-s)*(2*glm::pi<float>())/p )) + b;
 	}
 	float easeOut(float t,float b , float c, float d) {
 		if (t==0) return b;  if ((t/=d)==1) return b+c;
 		float p=d*.3f;
 		float a=c;
 		float s=p/4;
-		return (a*pow(2,-10*t) * sin( (t*d-s)*(2*PI)/p ) + c + b);
+		return (a*pow(2,-10*t) * sin( (t*d-s)*(2*glm::pi<float>())/p ) + c + b);
 	}
 	float easeInOut(float t,float b , float c, float d) {
 		if (t==0) return b;  if ((t/=d/2)==2) return b+c;
@@ -123,10 +119,10 @@ public:
 		float s=p/4;
 		if (t < 1) {
 			float postFix =a*pow(2,10*(t-=1)); // postIncrement is evil
-			return -.5f*(postFix* sin( (t*d-s)*(2*PI)/p )) + b;
+			return -.5f*(postFix* sin( (t*d-s)*(2*glm::pi<float>())/p )) + b;
 		}
 		float postFix =  a*pow(2,-10*(t-=1)); // postIncrement is evil
-		return postFix * sin( (t*d-s)*(2*PI)/p )*.5f + c + b;
+		return postFix * sin( (t*d-s)*(2*glm::pi<float>())/p )*.5f + c + b;
 	}
 };
 
@@ -211,13 +207,13 @@ public:
 class ofxEasingSine: public ofxEasing {
 public:
 	float easeIn (float t,float b , float c, float d) {
-		return -c * cos(t/d * (PI/2)) + c + b;
+		return -c * cos(t/d * (glm::pi<float>()/2)) + c + b;
 	}
 	float easeOut(float t,float b , float c, float d) {
-		return c * sin(t/d * (PI/2)) + b;
+		return c * sin(t/d * (glm::pi<float>()/2)) + b;
 	}
 	float easeInOut(float t,float b , float c, float d) {
-		return -c/2 * (cos(PI*t/d) - 1) + b;
+		return -c/2 * (cos(glm::pi<float>()*t/d) - 1) + b;
 	}
 };
 
