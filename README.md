@@ -2,7 +2,7 @@
 
 - Helper functions
 - ofParameters for UI
-- Target ofParameters (int, float. vec2, ofColor)
+- Target ofParameters (int, float, vec2, ofColor)
 - Persistent settings
 
 ### See examples
